@@ -28,19 +28,7 @@ def _load_webnlg()-> Dict:
             triples += triple 
         
     return texts, triples
-    
 
-def _load_squad(
-        dataset_name, 
-        context_column, 
-        task, 
-        dataset_config_name=None, 
-        cache_dir=None
-    )-> Dict:
-    
-    raw_datasets = load_dataset(dataset_name, dataset_config_name, cache_dir=cache_dir)
-    
-    return logs
 
 # encryptographe
 def text2hash(string: str) -> str:
@@ -292,6 +280,23 @@ def linearize_e2e_input(
 ########################################################################
 
 
+
+def LinearizeWTQInput(
+    table: Dict,
+):
+
+    header = table['header']
+    rows = table['rows']
+
+    entites = []
+    for r in rows:
+        entity = [f'{h} [ {v} ]' for h, v in zip(header, r)]
+        entites.append(' , '.join(entity))
+    
+    return '. '.join(entites)
+
+
+
 # for structured data source
 class LinearizeWebnlgInput():
 
@@ -348,7 +353,7 @@ class LinearizeWebnlgInput():
         return ' , '.join(ret)
 
 
-# split the raw text into triple entity1 | |entity2
+# split the raw text into triple value 1 | entity | value 2
 class Triple:
     def __init__(
         self,

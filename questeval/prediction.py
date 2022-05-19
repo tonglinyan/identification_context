@@ -16,13 +16,7 @@ from tqdm import tqdm
 #from questeval.bertscore import BERTScore
 from questeval.utils import (
     API_T2T,
-    sentencize,
-    calculate_f1_squad,
-    calculate_BERTScore,
-    extract_table_answers,
-    text2hash, 
-    normalize_answer
-    #_load_webnlg
+    LinearizeWTQInput
 )
 import argparse
 import sys
@@ -54,33 +48,7 @@ class QuestEval:
         limit_sent: int = 5,
         no_cuda: bool = False,
     ) -> None:
-        """
-        Main class for the QuestEval metric
 
-        Args:
-            task (:str):
-                the task to evaluate with QuestEval
-
-        Return:
-            :obj:`torch.optim.lr_scheduler.LambdaLR` with the appropriate schedule.
-        """
-        """
-        format for the json logs:
-            hash(txt) #json file name
-                {
-                'triple': "triple"
-                'references': [{'text': "reference text" 
-                                'answers': [answers],
-                                'questions': [questions],
-                                }, 
-                                {'text': "reference text" 
-                                'answers': [answers],
-                                'questions': [questions],
-                                }, 
-                                ...
-                              ]
-                }
-        """
         self.task = task
         self.limit_sent = limit_sent
         self.sep = "</s>"
@@ -140,13 +108,34 @@ class QuestEval:
 
 
     def _load_dataset(self, 
-        model: str,
         dataset:str,
-        ):
-        if 'T2T' in model:
-            self.text, self.question, self.answer = _load_squad()
-        if 'D2T' in model:
-             self.text, self.question, self.answer = _load_wtq()
+    ):
+        if 'T2T' in self.task:
+            self.text, self.question, self.answer = self._load_squad()
+        if 'D2T' in self.task:
+             self.text, self.question, self.answer = self._load_wtq()
+
+
+    def _load_squad(
+        self,
+    ):
+        raw_dataset = load_dataset("squad")['train']
+        context = raw_dataset["context"]
+        question = raw_dataset["question"]
+        answer = raw_dataset['answer']['text'][0]
+        return context, question, answer
+
+    def _load_wtq(
+        self, 
+    ):
+        dataset = load_dataset("wikitablequestions")['train']
+        question = dataset["question"]
+        answer = dataset["answer"]
+        table = dataset["table"]
+        text = []
+        for t in table:
+            text.append(LinearizeWTQInput(t))
+        return text, question, answer
 
 
     def _save_json(self, preds):
