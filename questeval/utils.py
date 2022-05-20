@@ -282,18 +282,27 @@ def linearize_e2e_input(
 
 
 def LinearizeWTQInput(
-    table: Dict,
+    header: List,
+    table: List,
 ):
 
-    header = table['header']
-    rows = table['rows']
-
     entites = []
-    for r in rows:
-        entity = [f'{h} [ {v} ]' for h, v in zip(header, r)]
+    for r in table:
+        entity = [f'{clean_obj(h)} [ {clean_obj(v)} ]' for h, v in zip(header, r)]
         entites.append(' , '.join(entity))
+        
     
     return '. '.join(entites)
+
+def clean_obj(
+    s,
+    lc: bool = False
+):
+    s = unidecode.unidecode(s)
+    if lc: s = s.lower()
+    s = re.sub('^"|"$', "", s)  # remove useless quotesigns
+    s = re.sub('_', ' ', s)  # turn underscores to spaces
+    return s
 
 
 

@@ -1,14 +1,14 @@
 from locale import normalize
 import re 
 from typing import List, Tuple, Dict, Callable
-import os
+#import os
 
 #from sklearn.naive_bayes import BernoulliNB
 import json
-import numpy as np
-import logging
-from datasets import load_metric, load_dataset
-import spacy
+#import numpy as np
+#import logging
+from datasets import load_dataset
+#import spacy
 #from sympy import Q
 import torch
 from questeval import DIR, __version__
@@ -16,26 +16,63 @@ from tqdm import tqdm
 #from questeval.bertscore import BERTScore
 from questeval.utils import (
     API_T2T,
-    LinearizeWTQInput
+    LinearizeWTQInput,
 )
 import argparse
 import sys
+import collections
+import string
 
 
 def parse_args():
     parser = argparse.ArgumentParser('Official evaluation script for SQuAD version 2.0.')
-    parser.add_argument('task', choices=["QA_D2T", "QG_D2T", "QA_T2T", "QG_T2T"], help='prediction of QA or QG')
-    parser.add_argument('author', choices=["hf", "trained"], default="hf")
-    parser.add_argument('dataset', choices=["squad", "WTQ"], help='datasets', default = "squad")
-    parser.add_argument('--out-file', '-o', metavar='eval.json',
-                        help='Write accuracy metrics to file (default is stdout).')
+    parser.add_argument('--task', choices=['QA_D2T', 'QG_D2T', 'QA_T2T', 'QG_T2T'], help='prediction of QA or QG')
+    parser.add_argument('--author', choices=['hf', 'trained'], default='hf')
+    parser.add_argument('--dataset', choices=['squad', 'SQA', 'WTQ'], help='datasets', default = 'squad')
     parser.add_argument('--verbose', '-v', action='store_true')
     if len(sys.argv) == 1:
         parser.print_help()
         sys.exit(1)
     return parser.parse_args()
 
-HF_ORGANIZATION = "ThomasNLG"
+
+def normalize_answer(s):
+    """Lower text and remove punctuation, articles and extra whitespace."""
+    def remove_articles(text):
+        regex = re.compile(r'\b(a|an|the)\b', re.UNICODE)
+        return re.sub(regex, ' ', text)
+    def white_space_fix(text):
+        return ' '.join(text.split())
+    def remove_punc(text):
+        exclude = set(string.punctuation)
+        return ''.join(ch for ch in text if ch not in exclude)
+    def lower(text):
+        return text.lower()
+    return white_space_fix(remove_articles(remove_punc(lower(s))))
+
+def get_tokens(s):
+    if not s: return []
+    return normalize_answer(s).split()
+
+def compute_exact(a_gold, a_pred):
+    return int(normalize_answer(a_gold) == normalize_answer(a_pred))
+
+def compute_f1(a_gold, a_pred):
+    gold_toks = get_tokens(a_gold)
+    pred_toks = get_tokens(a_pred)
+    common = collections.Counter(gold_toks) & collections.Counter(pred_toks)
+    num_same = sum(common.values())
+    if len(gold_toks) == 0 or len(pred_toks) == 0:
+        # If either is no-answer, then F1 is 1 if they agree, 0 otherwise
+        return int(gold_toks == pred_toks)
+    if num_same == 0:
+        return 0
+    precision = 1.0 * num_same / len(pred_toks)
+    recall = 1.0 * num_same / len(gold_toks)
+    f1 = (2 * precision * recall) / (precision + recall)
+    return f1
+
+HF_ORGANIZATION = 'ThomasNLG'
 
 class QuestEval:
     def __init__(
@@ -49,36 +86,39 @@ class QuestEval:
         no_cuda: bool = False,
     ) -> None:
 
+        
         self.task = task
         self.limit_sent = limit_sent
-        self.sep = "</s>"
+        self.sep = '</s>'
         self.qg_prefix = None
         self.qg_batch_size = qg_batch_size
         self.clf_batch_size = clf_batch_size
         self.device = 'cuda' if (torch.cuda.is_available() and not no_cuda) else 'cpu'
 
-        if 'bertscore' in self.list_scores:
-            #modifié
-            #self.metric_BERTScore = BERTScore()
-            self.metric_BERTScore = load_metric("bertscore")
-
-        self._load_all_models(task, author)
-
-
-        self.T2T_DATASETS = ["squad"]
-        self.D2T_DATASETS = ["WTQ"]
+        self.T2T_DATASETS = ['squad']
+        self.D2T_DATASETS = ['SQA', 'WTQ']
         if 'T2T' in self.task and dataset not in self.T2T_DATASETS:
             raise (
-                f"Dataset {dataset} is not available for model {self.task}. The list of available question-answering datasets are: {self.T2T_DATASETS}."
+                f'Dataset {dataset} is not available for model {self.task}. The list of available question-answering datasets are: {self.T2T_DATASETS}.'
             )
 
         if 'D2T' in self.task and dataset not in self.D2T_DATASETS:
             raise (
-                f"Dataset {dataset} is not available for model {self.task}. The list of available question-answering datasets are: {self.D2T_DATASETS}."
+                f'Dataset {dataset} is not available for model {self.task}. The list of available question-answering datasets are: {self.D2T_DATASETS}.'
             )
+
+        self._load_all_models(author)
         self._load_dataset(dataset)
         preds = self._prediction()
-        self._save_json(preds)
+        """
+        with open(f'{self.task}_{author}.json', 'r') as f:
+            data = json.load(f)
+
+        self.answer = [d['answer'] for d in data]
+        self.question = [d['question'] for d in data]
+        preds = [d['prediction'] for d in data]
+        """
+        print(self._evaluation(preds))
 
 
 
@@ -87,11 +127,11 @@ class QuestEval:
         if author == 'hf':
 
             if self.task == 'QA_T2T':
-                self.model = self.get_model(model_name=f'{HF_ORGANIZATION}/t5-qa_squad1-en')
+                self.model = self.get_model(model_name=f'{HF_ORGANIZATION}/t5-qa_squad2neg-en')
             if self.task == 'QA_D2T':
                 self.model = self.get_model(model_name=f'{HF_ORGANIZATION}/t5-qa_webnlg_synth-en')
             if self.task == 'QG_T2T':
-                self.model = self.get_model(model_name=f'{HF_ORGANIZATION}/t5-qa_squad2neg-en')
+                self.model = self.get_model(model_name=f'{HF_ORGANIZATION}/t5-qg_squad1-en')
             if self.task == 'QG_D2T':
                 self.model = self.get_model(model_name=f'{HF_ORGANIZATION}/t5-qg_webnlg_synth-en')
 
@@ -112,39 +152,68 @@ class QuestEval:
     ):
         if 'T2T' in self.task:
             self.text, self.question, self.answer = self._load_squad()
-        if 'D2T' in self.task:
-             self.text, self.question, self.answer = self._load_wtq()
+        if dataset == 'WTQ':
+            self.text, self.question, self.answer = self._load_wtq()
+        if dataset == 'SQA':
+            self.text, self.question, self.answer = self._load_sqa()
 
 
     def _load_squad(
         self,
     ):
-        raw_dataset = load_dataset("squad")['train']
-        context = raw_dataset["context"]
-        question = raw_dataset["question"]
-        answer = raw_dataset['answer']['text'][0]
+        raw_dataset = load_dataset('squad')['validation']
+        context = raw_dataset['context']
+        question = raw_dataset['question']
+        answer = [a['text'][0] for a in raw_dataset['answers']]
         return context, question, answer
 
+    def _load_sqa(
+        self, 
+    ):
+        dataset = load_dataset('msr_sqa')['test']
+        question = dataset['question']
+        answer = [', '.join(a) for a in dataset['answer_text']]
+        table = dataset['table_data']
+        header = dataset['table_header']
+        texts = []
+
+        pr = False
+        for h, t in tqdm(zip(header, table)):
+        
+            text = LinearizeWTQInput(h, t)
+            texts.append(LinearizeWTQInput(h, t))
+            if pr:
+                print(t)
+                print(text)
+                pr = False
+        return texts, question, answer
+
+    
     def _load_wtq(
         self, 
     ):
-        dataset = load_dataset("wikitablequestions")['train']
-        question = dataset["question"]
-        answer = dataset["answer"]
-        table = dataset["table"]
+        dataset = load_dataset('wikitablequestions')['test']
+        question = dataset['question']
+        answer = dataset['question']
+        table = dataset['table']
+
         text = []
-        for t in table:
-            text.append(LinearizeWTQInput(t))
+        for t in tqdm(table):
+            text.append(LinearizeWTQInput(t['header'], t['rows']))
         return text, question, answer
 
 
-    def _save_json(self, preds):
+    def _save_json(
+        self, 
+        preds: List,
+        author: str
+    ):
         data = []
         for i in range(len(preds)):
-            d = {"context": self.text[i], 'question': self.question[i], 'answer': self.answer[i], 'prediction': preds[i]}
+            d = {'context': self.text[i], 'question': self.question[i], 'answer': self.answer[i], 'prediction': preds[i]}
             data.append(d)
 
-        with open("./prediction.json", "w") as f:
+        with open(f'{self.task}_{author}.json', 'w') as f:
             json.dump(data, f, indent=4)
 
 
@@ -159,7 +228,8 @@ class QuestEval:
                 questions = self.question[idx:idx+batch_size]
                 texts = self.text[idx:idx+batch_size]
                 to_do_exs = [(q, c) for q, c in zip(questions, texts)]
-                pred = self._predict_answers(to_do_exs)
+                score, pred = self._predict_answers(to_do_exs)
+                assert len(pred) == len(to_do_exs)
                 preds += pred
             
         if 'QG' in self.task:
@@ -169,9 +239,34 @@ class QuestEval:
                 texts = self.text[idx:idx+batch_size]
                 to_do_exs = [(a, c) for a, c in zip(answers, texts)]
                 pred = self._predict_questions(to_do_exs)
+                assert len(pred) == len(to_do_exs)
                 preds += pred
-        assert len(preds) == len(self.text)
+        
         return preds
+
+
+    def _evaluation(
+        self, 
+        preds: List,
+    ):
+        if 'QA' in self.task:
+            gold = self.answer
+        if 'QG' in self.task:
+            gold = self.question
+
+        em, f1 = [], []
+        for g, a in zip(gold, preds):
+            em.append(compute_exact(g, a))
+            f1.append(compute_f1(g, a))
+
+        total = len(em)
+        return collections.OrderedDict([
+            ('exact', 100.0 * sum(em) / total),
+            ('f1', 100.0 * sum(f1) / total),
+            ('total', total),
+        ])
+
+        
 
 
     def _predict_questions(
@@ -193,9 +288,10 @@ class QuestEval:
     ) -> Tuple[List[float], List[str]]:
 
         formated_inputs = [f'{question} {self.sep} {context}' for question, context in to_do_exs]
-        qa_scores, qa_texts = self.model_QA.predict(formated_inputs)
+        qa_scores, qa_texts = self.model.predict(formated_inputs)
 
         return qa_scores, qa_texts
+
 
 
     def get_model(self, model_name: str):
@@ -203,12 +299,12 @@ class QuestEval:
 
         if 't5' in model_name.lower():
 
-            if "t5_qg_squad1_en" in model_name:
+            if 't5_qg_squad1_en' in model_name:
                 # the default models were trained with this prefix 'sv1' and 'nqa' prefix on the two datasets
                 self.qg_prefix = 'sv1'
 
             # batch size
-            model_batch_size = self.qg_batch_size if "qg" in model_name.lower() else self.clf_batch_size
+            model_batch_size = self.qg_batch_size if 'qg' in model_name.lower() else self.clf_batch_size
 
             model = API_T2T(
                 pretrained_model_name_or_path=model_name,
@@ -224,5 +320,7 @@ class QuestEval:
         return model
 
 
-questeval = QuestEval()
-questeval.corpus_questeval()
+if __name__ == '__main__':
+    args = parse_args()
+    questeval = QuestEval(args.task, args.author, args.dataset)
+
