@@ -1,0 +1,144 @@
+{
+  "type": "src",
+  "text": "The traditional areas of linguistic analysis include phonetics, phonology, morphology, syntax, semantics, and pragmatics.[2] Each of these areas roughly corresponds to phenomena found in human linguistic systems: sounds (and gesture, in the case of signed languages), minimal units (words, morphemes), phrases and sentences, and meaning and use. Linguistics studies these phenomena in diverse ways and from various perspectives. Theoretical linguistics (including traditional descriptive linguistics) is concerned with building models of these systems, their parts (ontologies), and their combinatorics. Psycholinguistics builds theories of the processing and production of all these phenomena. These phenomena may be studied synchronically or diachronically (through history), in monolinguals or polyglots, in children or adults, as they are acquired or statically, as abstract objects or as embodied cognitive structures, using texts (corpora) or through experimental elicitation, by gathering data mechanically, through fieldwork, or through introspective judgment tasks. Computational linguistics implements theoretical constructs to parse or produce natural language or homologues. Neurolinguistics investigates linguistic phenomena by experiments on actual brain responses involving linguistic stimuli. Linguistics is related to philosophy of language, stylistics and rhetoric, semiotics, lexicography, and translation.",
+  "self": {
+    "NER": {
+      "answers": [],
+      "QG_hash=/home/tonglin.yan/questeval/questeval/t5_qg_squad1_en": {
+        "questions": []
+      }
+    },
+    "NOUN": {
+      "answers": [
+        "The traditional areas",
+        "linguistic analysis",
+        "phonetics",
+        "phonology",
+        "morphology",
+        "syntax",
+        "semantics",
+        "pragmatics.[2",
+        "these areas",
+        "phenomena",
+        "human linguistic systems",
+        "the case",
+        "signed languages",
+        "minimal units",
+        "words",
+        "morphemes",
+        "phrases",
+        "sentences",
+        "meaning",
+        "use",
+        "Linguistics",
+        "these phenomena",
+        "diverse ways",
+        "various perspectives",
+        "Theoretical linguistics",
+        "traditional descriptive linguistics",
+        "building models",
+        "these systems",
+        "their parts",
+        "(ontologies",
+        "their combinatorics",
+        "Psycholinguistics",
+        "theories",
+        "the processing",
+        "production",
+        "all these phenomena",
+        "These phenomena",
+        "history",
+        "monolinguals",
+        "polyglots",
+        "children",
+        "adults",
+        "they",
+        "abstract objects",
+        "cognitive structures",
+        "texts",
+        "corpora",
+        "experimental elicitation",
+        "data",
+        "fieldwork",
+        "introspective judgment tasks"
+      ],
+      "QG_hash=/home/tonglin.yan/questeval/questeval/t5_qg_squad1_en": {
+        "questions": [
+          "What are the areas of linguistic analysis?",
+          "What are the traditional areas of linguistic analysis?",
+          "What are the traditional areas of linguistic analysis?",
+          "What are the traditional areas of linguistic analysis?",
+          "What are the traditional areas of linguistic analysis?",
+          "What are the traditional areas of linguistic analysis?",
+          "What are the traditional areas of linguistic analysis?",
+          "What are the traditional areas of linguistic analysis?",
+          "What are the traditional areas of linguistic analysis?",
+          "What is the main area of linguistic analysis?",
+          "What is the main area of linguistic analysis?",
+          "What is the main area of linguistic analysis?",
+          "What is the case of gesture?",
+          "What are words, morphemes, phrases and sentences?",
+          "What is the main area of linguistic analysis?",
+          "What are the basic areas of linguistic analysis?",
+          "What are the traditional areas of linguistic analysis?",
+          "What are the traditional areas of linguistic analysis?",
+          "What is the main area of linguistic analysis?",
+          "What is the meaning of linguistics?",
+          "What is the term for the term \"linguistic analysis\"?",
+          "What is the main focus of linguistic analysis?",
+          "What is the main focus of Linguistics?",
+          "What is the main focus of Linguistics?",
+          "What is the term for the traditional areas of linguistic analysis?",
+          "What is the term for theoretical linguistics?",
+          "What is theoretical linguistics concerned with?",
+          "What is the main focus of the linguistic analysis?",
+          "What is the main focus of the traditional areas of linguistic analysis?",
+          "What are the parts of the linguistics?",
+          "What is the term for theoretical linguistics?",
+          "What is the main focus of the linguistic analysis?",
+          "What is the main focus of psycholinguistics?",
+          "What is the main theory of psycholinguistics?",
+          "What is the main focus of psycholinguistics?",
+          "What is the main focus of psycholinguistics?",
+          "What is the main area of linguistic analysis?",
+          "What is the term for linguistic analysis?",
+          "What type of phenomena are studied in polyglots?",
+          "What type of phenomena are studied in monolinguals?",
+          "What type of children are studied in monolinguals or polyglots?",
+          "What type of children are acquired or statically?",
+          "What are the traditional areas of linguistic analysis?",
+          "What are the phenomena acquired or statically?",
+          "What are abstract objects or as embodied cognitive structures?",
+          "What are the traditional areas of linguistic analysis?",
+          "What is the term for texts?",
+          "What is the process of gathering data mechanically, through fieldwork, or through introspective",
+          "What is the main area of linguistic analysis?",
+          "What is the process of gathering data mechanically?",
+          "What is the process of gathering data mechanically or through fieldwork?"
+        ]
+      }
+    }
+  },
+  "asked": {
+    "What is the scientific study of language?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.1514320969581604,
+        "ground_truth": {
+          "Linguistics": {
+            "bertscore": 0.6427097320556641,
+            "f1": 0
+          },
+          "the scientific study": {
+            "bertscore": 0.6239704489707947,
+            "f1": 0
+          },
+          "language": {
+            "bertscore": 0.6804500818252563,
+            "f1": 0
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,8 +1,7 @@
 from locale import normalize
 import re 
 from typing import List, Tuple, Dict, Callable
-#import os
-
+import os
 #from sklearn.naive_bayes import BernoulliNB
 import json
 #import numpy as np
@@ -14,7 +13,7 @@ import torch
 from questeval import DIR, __version__
 from tqdm import tqdm
 #from questeval.bertscore import BERTScore
-from questeval.utils import (
+from utils import (
     API_T2T,
     LinearizeWTQInput,
 )
@@ -23,6 +22,8 @@ import sys
 import collections
 import string
 
+DIR = os.path.dirname("__file__")
+__version__ = "0.2.4"
 
 def parse_args():
     parser = argparse.ArgumentParser('Official evaluation script for SQuAD version 2.0.')
@@ -88,6 +89,7 @@ class QuestEval:
 
         
         self.task = task
+        self.author = author
         self.limit_sent = limit_sent
         self.sep = '</s>'
         self.qg_prefix = None
@@ -286,9 +288,12 @@ class QuestEval:
         self,
         to_do_exs: List[tuple]
     ) -> Tuple[List[float], List[str]]:
-
-        formated_inputs = [f'{question} {self.sep} {context}' for question, context in to_do_exs]
+        if self.author == 'hf':
+            formated_inputs = [f'{question} {self.sep} {context}' for question, context in to_do_exs]
+        else:
+            formated_inputs = [f'question:{question}context:{context}' for question, context in to_do_exs]
         qa_scores, qa_texts = self.model.predict(formated_inputs)
+        print(qa_texts[0])
 
         return qa_scores, qa_texts
 

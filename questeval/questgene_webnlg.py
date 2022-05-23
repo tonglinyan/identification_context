@@ -3,18 +3,14 @@ import re
 from typing import List, Tuple, Dict, Callable
 import os
 
-#from sklearn.naive_bayes import BernoulliNB
 import json
 import numpy as np
 import logging
 from datasets import load_metric, load_dataset
 import spacy
-#from sympy import Q
 import torch
-from questeval import DIR, __version__
 from tqdm import tqdm
-#from questeval.bertscore import BERTScore
-from questeval.utils import (
+from utils import (
     API_T2T,
     sentencize,
     calculate_f1_squad,
@@ -23,8 +19,10 @@ from questeval.utils import (
     text2hash, 
     normalize_answer
     #_load_webnlg
-)
+    )
 
+DIR = os.path.dirname(__file__)
+__version__ = "0.2.4"
 
 HF_ORGANIZATION = "ThomasNLG"
 
@@ -145,19 +143,19 @@ class QuestEval:
         d_loaded_logs = dict()
 
 
-        """logs, hyp_hashes, modified_logs = self._texts2logs(type_logs='hyp', d_loaded_logs=d_loaded_logs)
+        logs, hyp_hashes, modified_logs = self._texts2logs(type_logs='hyp', d_loaded_logs=d_loaded_logs)
 
         if modified_logs: 
             self.is_question(logs)
             self.answer_filtering(logs)
             self._save_json(logs)
-            print(modified_logs)"""
+            print(modified_logs)
 
-
+        """
         with open("webnlg_qgqa.json") as f:
             logs = json.load(f)
         self._save_json(logs)
-
+        """
         return 
 
 
@@ -251,7 +249,7 @@ class QuestEval:
                                 assert isinstance(log["triple_linearized"], str)
                                 assert isinstance(log['references'], list)
                                 assert len(log['references']) == len(texts)
-                                log = tmp
+                                #log = tmp
                         except json.decoder.JSONDecodeError:
                             self.hash_files.remove(log_hash)
                             os.remove(cached_path)

@@ -1,0 +1,454 @@
+{
+  "type": "hyp",
+  "text": "After wildfires consumed an entire town, students and teachers who had planned for remote classes found some comfort in staying connected amid the chaos.",
+  "self": {
+    "NER": {
+      "answers": [],
+      "QG_hash=/home/tonglin.yan/questeval/questeval/t5_qg_squad1_en": {
+        "questions": []
+      }
+    },
+    "NOUN": {
+      "answers": [
+        "wildfires",
+        "an entire town",
+        "students",
+        "teachers",
+        "who",
+        "remote classes",
+        "some comfort",
+        "the chaos"
+      ],
+      "QG_hash=/home/tonglin.yan/questeval/questeval/t5_qg_squad1_en": {
+        "questions": [
+          "What caused the chaos in the town?",
+          "What was the cause of the wildfires?",
+          "What did students and teachers plan for remote classes?",
+          "What did students and teachers plan for remote classes?",
+          "What did students and teachers who had planned for remote classes find comfort in staying connected?",
+          "What classes did students and teachers plan for?",
+          "What comfort did students and teachers find when they planned for remote classes?",
+          "What chaos did students and teachers have to stay connected to?"
+        ]
+      }
+    }
+  },
+  "asked": {
+    "What was Ash's name?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.08274829387664795,
+        "ground_truth": {
+          "Jennifer Willin": {
+            "bertscore": 0.6733198165893555,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What was the name of the school that Jennifer Willin drove home from?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.1288509964942932,
+        "ground_truth": {
+          "last week": {
+            "bertscore": 0.7235004305839539,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What was the name of the school in tiny Berry Creek?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.17760294675827026,
+        "ground_truth": {
+          "Berry Creek": {
+            "bertscore": 0.6714778542518616,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What city did Jennifer Willin and her family escape to?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.24245738983154297,
+        "ground_truth": {
+          "Calif.": {
+            "bertscore": 0.5362987518310547,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What did Jennifer Willin pick up for her daughters' remote classes?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.13617926836013794,
+        "ground_truth": {
+          "Wi-Fi": {
+            "bertscore": 0.6434490084648132,
+            "f1": 0
+          },
+          "a pair": {
+            "bertscore": 0.7199288606643677,
+            "f1": 0
+          },
+          "Wi-Fi hot spots": {
+            "bertscore": 0.6333360075950623,
+            "f1": 0
+          },
+          "her daughters\u2019 remote classes": {
+            "bertscore": 0.6522607207298279,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What did Jennifer Willin do when she was driving home from the only school in Berry Creek?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.45548295974731445,
+        "ground_truth": {
+          "Hours later": {
+            "bertscore": 0.6807727813720703,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What did Jennifer Willin do to her daughters?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.4125252962112427,
+        "ground_truth": {
+          "the next morning": {
+            "bertscore": 0.699936032295227,
+            "f1": 0
+          },
+          "Willin": {
+            "bertscore": 0.6468203067779541,
+            "f1": 0
+          },
+          "she": {
+            "bertscore": 0.685562789440155,
+            "f1": 0
+          },
+          "what": {
+            "bertscore": 0.6613709330558777,
+            "f1": 0
+          },
+          "business": {
+            "bertscore": 0.7047354578971863,
+            "f1": 0
+          },
+          "Ms. Willin": {
+            "bertscore": 0.7037966847419739,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What town did Jennifer Willin and her family escape to?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.13783878087997437,
+        "ground_truth": {
+          "Northern California": {
+            "bertscore": 0.6865137815475464,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What was the name of the town that killed nine people?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.22870248556137085,
+        "ground_truth": {
+          "about 1,200": {
+            "bertscore": 0.667809247970581,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What was the death of Ash?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.06996965408325195,
+        "ground_truth": {
+          "nine": {
+            "bertscore": 0.7211693525314331,
+            "f1": 0
+          },
+          "nine residents": {
+            "bertscore": 0.703110933303833,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What was the name of the school that killed nine people?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.19290626049041748,
+        "ground_truth": {
+          "16-year-old": {
+            "bertscore": 0.6656206250190735,
+            "f1": 0
+          },
+          "a 16-year-old boy": {
+            "bertscore": 0.6495321393013,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What miles did Jennifer Willin and her family escape to?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.31019389629364014,
+        "ground_truth": {
+          "60 miles": {
+            "bertscore": 0.6794244647026062,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What did Jennifer Willin do when she drove home from the only school in Berry Creek?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.38492053747177124,
+        "ground_truth": {
+          "Ash": {
+            "bertscore": 0.6832181811332703,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What sky did Ash fall from?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.08255088329315186,
+        "ground_truth": {
+          "an apocalyptic orange sky": {
+            "bertscore": 0.6570649147033691,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What school did Jennifer Willin drive home from last week?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.0804564356803894,
+        "ground_truth": {
+          "the only school": {
+            "bertscore": 0.6709389686584473,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What town did Jennifer Willin drive home from?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.07284224033355713,
+        "ground_truth": {
+          "tiny Berry Creek": {
+            "bertscore": 0.6683672070503235,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What was an emergency alert for Ash?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.17993634939193726,
+        "ground_truth": {
+          "her cellphone": {
+            "bertscore": 0.6666144132614136,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What did Jennifer Willin call her cellphone?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.10278207063674927,
+        "ground_truth": {
+          "an emergency alert": {
+            "bertscore": 0.7008050084114075,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What official described a wall of fire?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.13668370246887207,
+        "ground_truth": {
+          "one official": {
+            "bertscore": 0.7457039952278137,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What was the name of the fire that hit the Northern California town?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.5233416557312012,
+        "ground_truth": {
+          "a \u201cmassive wall": {
+            "bertscore": 0.6656410098075867,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What was the name of the wall of fire that hit the Northern California town?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.3856774568557739,
+        "ground_truth": {
+          "fire": {
+            "bertscore": 0.7204977869987488,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What town was the largest in the country?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.1114465594291687,
+        "ground_truth": {
+          "the entire Northern California town": {
+            "bertscore": 0.6429077386856079,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What was the name of the town that Ash was killed?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.1607113480567932,
+        "ground_truth": {
+          "about 1,200 people": {
+            "bertscore": 0.6425802111625671,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What was the name of the school that Ash was driving home from?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.10214507579803467,
+        "ground_truth": {
+          "the school": {
+            "bertscore": 0.6779178380966187,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What was the name of the school that destroyed the school?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.17776858806610107,
+        "ground_truth": {
+          "almost every home": {
+            "bertscore": 0.6867966055870056,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What did Jennifer Willin and her family escape to a cramped hotel room?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.0851786732673645,
+        "ground_truth": {
+          "her family": {
+            "bertscore": 0.7057926058769226,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What was the name of the hotel room that Jennifer Willin and her family escaped to?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.12983977794647217,
+        "ground_truth": {
+          "a cramped hotel room": {
+            "bertscore": 0.6727050542831421,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What caused Ash to forget to grab masks?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.08440452814102173,
+        "ground_truth": {
+          "her panic": {
+            "bertscore": 0.690070629119873,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What did Jennifer Willin forget to grab?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.054415225982666016,
+        "ground_truth": {
+          "masks": {
+            "bertscore": 0.7415618300437927,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What did Jennifer Willin have?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.14365553855895996,
+        "ground_truth": {
+          "the hot spots": {
+            "bertscore": 0.6727958917617798,
+            "f1": 0
+          },
+          "her daughters\u2019 laptops": {
+            "bertscore": 0.6549044847488403,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What did Jennifer Willin and her family get to the hotel room?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.1614755392074585,
+        "ground_truth": {
+          "school books": {
+            "bertscore": 0.6919472217559814,
+            "f1": 0
+          }
+        }
+      }
+    }
+  }
+}

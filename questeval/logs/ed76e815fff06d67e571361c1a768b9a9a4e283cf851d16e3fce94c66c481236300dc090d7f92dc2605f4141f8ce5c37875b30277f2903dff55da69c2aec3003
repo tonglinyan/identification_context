@@ -1,0 +1,70 @@
+{
+  "type": "hyp",
+  "text": "1950 da was discovered by carl.",
+  "self": {
+    "NER": {
+      "answers": [
+        "1950"
+      ],
+      "QG_hash=/home/tonglin.yan/questeval/questeval/t5_qg_squad1_en": {
+        "questions": [
+          "What year was the discovery of a carl?"
+        ]
+      }
+    },
+    "NOUN": {
+      "answers": [
+        "1950 da",
+        "carl"
+      ],
+      "QG_hash=/home/tonglin.yan/questeval/questeval/t5_qg_squad1_en": {
+        "questions": [
+          "What was discovered by carl?",
+          "What was the name of the carl discovered by carl?"
+        ]
+      }
+    }
+  },
+  "asked": {
+    "What was the name of the discovery of 1950 da?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "carl",
+        "answerability": 0.98594069480896,
+        "ground_truth": {
+          "1950": {
+            "bertscore": 0.6541472673416138,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What was discovered by carl a wirtanen?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.18807119131088257,
+        "ground_truth": {
+          "1950 da": {
+            "bertscore": 0.6931735873222351,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What was the name of the 1950 da discovered by carl a wirtanen?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.11102437973022461,
+        "ground_truth": {
+          "carl": {
+            "bertscore": 0.6858732104301453,
+            "f1": 0
+          },
+          "a wirtanen": {
+            "bertscore": 0.6877415180206299,
+            "f1": 0
+          }
+        }
+      }
+    }
+  }
+}

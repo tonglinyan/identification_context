@@ -8,9 +8,8 @@ import logging
 from datasets import load_metric
 import spacy
 import torch
-from questeval import DIR, __version__
 from questeval.bertscore import BERTScore
-from questeval.utils import (
+from utils import (
     API_T2T,
     sentencize,
     calculate_f1_squad,
@@ -19,6 +18,8 @@ from questeval.utils import (
     text2hash
 )
 
+DIR = os.path.dirname("__file__")
+__version__ = "0.2.4"
 HF_ORGANIZATION = "ThomasNLG"
 
 class QuestEval:
@@ -631,7 +632,7 @@ class QuestEval:
         type_logs: str
     ) -> Tuple[List[float], List[str]]:
         model_QA = self.models[type_logs]['QA']
-        formated_inputs = [f'{question} {self.sep} {context}' for question, context in to_do_exs]
+        formated_inputs = [f'question:{question}context:{context}' for question, context in to_do_exs]
         qa_scores, qa_texts = model_QA.predict(formated_inputs)
 
         return qa_scores, qa_texts
