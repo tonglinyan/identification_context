@@ -21,6 +21,8 @@ Fine-tuning the library's seq2seq models for question answering using the 🤗 S
 import logging
 import os
 import sys
+import unidecode
+import re
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple
 
@@ -44,7 +46,7 @@ from transformers.utils.versions import require_version
 
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
-check_min_version("4.19.0.dev0")
+check_min_version("4.20.0.dev0")
 
 require_version("datasets>=1.8.0", "To fix: pip install -r examples/pytorch/question-answering/requirements.txt")
 
@@ -119,6 +121,10 @@ class DataTrainingArguments:
     test_file: Optional[str] = field(
         default=None,
         metadata={"help": "An optional input test data file to evaluate the perplexity on (a text file)."},
+    )
+    loading_file: Optional[str] = field(
+        default=None,
+        metadata={"help": "The dataset loading scripy ends by .py."}
     )
     overwrite_cache: bool = field(
         default=False, metadata={"help": "Overwrite the cached training and evaluation sets"}
@@ -309,16 +315,11 @@ def main():
         data_files = {}
         if data_args.train_file is not None:
             data_files["train"] = data_args.train_file
-            extension = data_args.train_file.split(".")[-1]
-
         if data_args.validation_file is not None:
             data_files["validation"] = data_args.validation_file
-            extension = data_args.validation_file.split(".")[-1]
         if data_args.test_file is not None:
             data_files["test"] = data_args.test_file
-            extension = data_args.test_file.split(".")[-1]
-
-        raw_datasets = load_dataset("new_dataset.py", data_files=data_files)
+        raw_datasets = load_dataset(data_args.loading_file, data_files=data_files)
     # See more about loading any type of standard or custom dataset (from files, python dict, pandas DataFrame, etc) at
     # https://huggingface.co/docs/datasets/loading_datasets.html.
 
@@ -421,14 +422,124 @@ def main():
         answers = examples[answer_column]
         
         def generate_input(_answer, _context):
-            return " ".join(["answer:", _answer.lstrip(), "context:", _context.lstrip()])
+            return " ".join(["sv1 </s> ", _answer.lstrip(), " </s> ", _context.lstrip()])
         
         inputs = [generate_input(answer, context) for answer, context in zip(answers, contexts)]
         targets = questions
         return inputs, targets
 
+
+    def preprocess_SQA_batch(
+        examples,
+        question_column: str, 
+        context_column: str, 
+        answer_column: str
+    ) -> Tuple[List[str], List[str]]:
+
+        questions = examples[question_column]
+        answers = [', '.join(a) for a in examples[answer_column]]
+
+        def linearization(header, data):
+            def clean_obj(
+                s,
+                lc: bool = False
+            ):
+                s = unidecode.unidecode(s)
+                if lc: s = s.lower()
+                s = re.sub('^"|"$', "", s)  # remove useless quotesigns
+                s = re.sub('_', ' ', s)  # turn underscores to spaces
+                return s
+            
+            entites = []
+            for r in data:
+                e = [f'{clean_obj(h)} [ {clean_obj(v)} ]' for h, v in zip(header, r)]
+                entites.append(' , '.join(e))
+            return '; '.join(entites)
+
+        def generate_input(_answer, _context):
+            return " ".join(["sv1 </s> ", _answer.lstrip(), " </s> ", _context.lstrip()])
+
+
+        contexts = [linearization(h, d) for h, d in zip(examples[context_column], examples["table_data"])]
+
+        inputs = [generate_input(answer, context) for answer, context in zip(answers, contexts)]
+        targets = questions
+        return inputs, targets
+
+    
+    def preprocess_WTQ_batch(
+        examples,
+        question_column: str, 
+        context_column: str, 
+        answer_column: str
+    ) -> Tuple[List[str], List[str]]:
+
+        questions = examples[question_column]
+        answers = [', '.join(a) for a in examples[answer_column]]
+        table = examples[context_column]
+        header = [c['header'] for c in table]
+        data = [c['rows'] for c in table]
+
+        def linearization(header, data):
+            entites = []
+
+            def clean_obj(
+                s,
+                lc: bool = False
+            ):
+                s = unidecode.unidecode(s)
+                if lc: s = s.lower()
+                s = re.sub('^"|"$', "", s)  # remove useless quotesigns
+                s = re.sub('_', ' ', s)  # turn underscores to spaces
+                return s
+
+            for r in data:
+                e = [f'{clean_obj(h)} [ {clean_obj(v)} ]' for h, v in zip(header, r)]
+                entites.append(' , '.join(e))
+            return '. '.join(entites)
+        """
+
+        def linearization(header, data):
+
+            def clean_obj(
+                s,
+                lc: bool = False
+            ):
+                s = unidecode.unidecode(s)
+                if lc: s = s.lower()
+                s = re.sub('^"|"$', "", s)  # remove useless quotesigns
+                s = re.sub('_', ' ', s)  # turn underscores to spaces
+                return s
+
+            entites = {h: [] for h in header}
+            context = []
+            for r in data:
+                for h, v in zip(header, r):
+                    entites[h].append(clean_obj(v))
+            for h in header:
+                e = ", ".join(entites[h])
+                context.append(f'{clean_obj(h)} [ {e} ]')
+
+            return '; '.join(context)
+        """
+        def generate_input(_answer, _context):
+            return " ".join(["sv1 </s> ", _answer.lstrip(), " </s> ", _context.lstrip()])
+        
+        contexts = [linearization(h, d) for h, d in zip(header, data)]
+
+        inputs = [generate_input(answer, context) for answer, context in zip(answers, contexts)]
+        targets = questions
+        return inputs, targets
+        
+
+
     def preprocess_function(examples):
-        inputs, targets = preprocess_squad_batch(examples, question_column, context_column, answer_column)
+        if data_args.dataset_name == "msr_sqa":
+            inputs, targets = preprocess_SQA_batch(examples, question_column, context_column, answer_column)
+        elif data_args.dataset_name == "wikitablequestions":
+            inputs, targets = preprocess_WTQ_batch(examples, question_column, context_column, answer_column)
+        else:
+            inputs, targets = preprocess_squad_batch(examples, question_column, context_column, answer_column)
 
         model_inputs = tokenizer(inputs, max_length=max_seq_length, padding=padding, truncation=True)
         # Setup the tokenizer for targets
@@ -447,7 +558,12 @@ def main():
 
     # Validation preprocessing
     def preprocess_validation_function(examples):
-        inputs, targets = preprocess_squad_batch(examples, question_column, context_column, answer_column)
+        if data_args.dataset_name == "msr_sqa":
+            inputs, targets = preprocess_SQA_batch(examples, question_column, context_column, answer_column)
+        elif data_args.dataset_name == "wikitablequestions":
+            inputs, targets = preprocess_WTQ_batch(examples, question_column, context_column, answer_column)
+        else:
+            inputs, targets = preprocess_squad_batch(examples, question_column, context_column, answer_column)
 
         model_inputs = tokenizer(
             inputs,

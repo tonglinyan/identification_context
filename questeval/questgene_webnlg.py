@@ -166,7 +166,9 @@ class QuestEval:
 
 
     def _save_json(self, logs):
-        data = []
+        
+        data = {"train":[], "dev":[], "test":[]}
+        
         for log in logs:
             answers, questions = [], []
             for ref in log["references"]:
@@ -174,21 +176,17 @@ class QuestEval:
                     if not (a in answers and q in questions):                
                         answers.append(a)
                         questions.append(q)
-                        d = {"triplet": log["triple"], "context": log["triple_linearized"], 'question': q, 'answer': a}
-                        data.append(d)
+                        d = {"triplet": log['triple'], 'linearization': log["triple_linearized"], 'context': ref["text"], 'question': q, 'answer': a}
+                        data[log["type"]].append(d)
         
-        import random
-        random.shuffle(data)
-
-        with open("./webnlg_qgqa_train.json", "w") as f:
-            json.dump(data[:int(0.6*len(data))], f, indent=4)
+        with open(f"./webnlg_qgqa_train.json", "w") as f:
+            json.dump(data["train"], f, indent=4)
 
         with open("./webnlg_qgqa_dev.json", "w") as f:
-            json.dump(data[int(0.6*len(data)):int(0.8*len(data))], f, indent=4)
+            json.dump(data["dev"], f, indent=4)
 
         with open("./webnlg_qgqa_test.json", "w") as f:
-            json.dump(data[int(0.8*len(data)):], f, indent=4)
-
+            json.dump(data["test"], f, indent=4)
 
 
     def _texts2logs(
@@ -230,7 +228,7 @@ class QuestEval:
 
                 log_hash = text2hash(linearized) # hashcode of a text
                 if log_hash not in d_loaded_logs:
-                    log = {'triple': triples, 'triple_linearized': linearized, 'references': list()}
+                    log = {'type': type, 'triple': triples, 'triple_linearized': linearized, 'references': list()}
 
                     for text in texts:
                         ref = {"text": text, 'questions': list(), 'answers': list()}
@@ -245,6 +243,7 @@ class QuestEval:
                             with open(cached_path, 'r') as f_log:
                                 tmp  = json.load(f_log)
                                 assert all([k in log for k in ['triple', 'references']])
+                                assert isinstance(log["type"], str)
                                 assert isinstance(log["triple"], list)
                                 assert isinstance(log["triple_linearized"], str)
                                 assert isinstance(log['references'], list)

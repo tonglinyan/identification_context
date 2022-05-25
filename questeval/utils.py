@@ -291,7 +291,6 @@ def LinearizeWTQInput(
         entity = [f'{clean_obj(h)} [ {clean_obj(v)} ]' for h, v in zip(header, r)]
         entites.append(' , '.join(entity))
         
-    
     return '. '.join(entites)
 
 def clean_obj(
