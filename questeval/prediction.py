@@ -222,8 +222,9 @@ class QuestEval:
 
         texts = [linearization(h, d) for h, d in zip(header, table)]
 
-        context = [f'{t} Domain [ {d} ]' for t, d in zip(texts, domain)]        
-        return context, questions, answers
+        context = [f'{t} Domain [ {d} ]' for t, d in zip(texts, domain)] 
+        res = context if "QA" in self.task else texts    
+        return res, questions, answers
 
     
     def _load_wtq(
