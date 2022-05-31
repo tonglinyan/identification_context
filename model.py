@@ -1,10 +1,6 @@
-from turtle import forward
-from unicodedata import bidirectional
-from sympy import N
 import torch.nn.functional as F
 import torch
 import torch.nn as nn
-import re
 import numpy as np
 from tokenization import (
     embeddings, 
@@ -13,13 +9,13 @@ from tokenization import (
 
 
 class CharEmbedding(nn.Module):
-    def __init__(self, input_size, hidden_size=50, num_layers=3):
+    def __init__(self, input_size, hidden_size, num_layers=3):
         super(CharEmbedding, self).__init__()
         self.emb_layer = nn.Embedding(input_size, hidden_size)
         self.bigru = BiGRU(hidden_size, hidden_size, num_layers)
         
 
-    def forward(self, x):
+    def forward(self,cx):
         char_emb = self.emb_layer(x)
         char_emb = self.bigru(char_emb)
         return char_emb
@@ -87,19 +83,20 @@ class MatchScore(nn.Module):
         self.l1 = nn.Linear(hidden_size, hidden_size)
         self.l2 = nn.Linear(hidden_size, output_size)
         self.dropout = nn.Dropout(dropout)
+        self.softmax = nn.Softmax(dim=1)
 
     
     def forward(self, x):
         x = self.l1(x)
         x = self.l2(x)
         scores = self.w_v(nn.tanh(x))
-        return scores
+        return self.softmax(scores)
 
 
 class WC_Embedding(nn.Module):
     def __init__(self, hidden_size, dropout):
         super(WC_Embedding, self).__init__()
-        self.word_emb = nn.Embedding.from_pretrained(embeddings)
+        self.word_emb = nn.Embedding.from_pretrained(torch.Tensor(embeddings))
         self.char_emb = CharEmbedding(NUM_LETTRES, hidden_size)
 
         self.bigru = BiGRU(hidden_size*2, hidden_size)
@@ -119,14 +116,14 @@ class Encoder(nn.Module):
         self.wc_emb = WC_Embedding(hidden_size, dropout)
         self.bigru = BiGRU(hidden_size*2, hidden_size)
         self.attention = Attention(hidden_size*2, hidden_size*2, hidden_size, dropout)
+        self.gru = GRU(hidden_size, hidden_size)
+        self.matchscore = MatchScore(hidden_size*2, 2, dropout)
         self.sig = nn.Sigmoid()
         self.linear = nn.Linear(hidden_size*2, hidden_size)
-        self.gru = GRU()
-        self.matchscore = MatchScore(hidden_size*2, 1)
 
-    def forward(self, questions, passages): 
-        q_word, q_char = questions[0], questions[1]
-        p_word, p_char = passages[0], passages[1]
+
+
+    def forward(self, q_word, q_char, p_word, p_char): 
 
         q_emb = self.wc_emb(q_word, q_char)
         p_emb = self.wc_emb(p_word, p_char)

@@ -4,9 +4,9 @@ from datamaestro.definitions import AbstractDataset
 import torch
 import re
 import numpy as np
-from pathlib import Path
 from torch.utils.data import Dataset
 import sys
+from tqdm import tqdm
 
 def prepare_dataset(dataset_id: str):
     """Find a dataset given its id and download the resources"""
@@ -15,7 +15,7 @@ def prepare_dataset(dataset_id: str):
     return ds.prepare(download=True)
 
 
-def word_embedding(embedding_size=50):
+def word2vec(OOVID, SEPID, embedding_size=50):
     """Renvoie l'ensemble des donnéees nécessaires pour l'apprentissage (embedding_size = [50,100,200,300])
 
     - dictionnaire word vers ID
@@ -28,30 +28,31 @@ def word_embedding(embedding_size=50):
 
     words, embeddings = prepare_dataset(
         'edu.stanford.glove.6b.%d' % embedding_size).load()
-    OOVID = len(words)
-    words.append("__OOV__")
+
     word2id = {word: ix for ix, word in enumerate(words)}
+    word2id['<unk>'] = OOVID
+    word2id['<sep>'] = SEPID
+    words.append("<unk>")
+    words.append("<sep>")
+    id2word = dict(zip(word2id.values(),id2lettre.keys()))
+    ### lack of one embedding
     embeddings = np.vstack((embeddings, np.zeros(embedding_size)))
-    
 
-    ds = prepare_dataset("edu.stanford.aclimdb")
+    return word2id, id2word, embeddings, WORDS
 
-    return word2id, embeddings, OOVID, WORDS
-
-
-word2id, embeddings, OOVID, WORDS = word_embedding()
 
 ## Token de padding (BLANK)
-UNK_IX = 0
+OOVID = 0
 ## Token de fin de séquence
-SEP_IX = 1
-
+SEPID = -1
 LETTRES = string.ascii_letters + string.punctuation + string.digits + ' '
-id2lettre = dict(zip(range(2, len(LETTRES)+2), LETTRES))
-id2lettre[UNK_IX] = '<unk>' ##NULL CHARACTER
-id2lettre[SEP_IX] = '<sep>'
+id2lettre = dict(zip(range(1, len(LETTRES)+1), LETTRES))
+id2lettre[OOVID] = '<unk>' #PAD
+id2lettre[SEPID] = '<sep>'
 lettre2id = dict(zip(id2lettre.values(),id2lettre.keys()))
 NUM_LETTRES = len(lettre2id)
+word2id, id2word, embeddings, WORDS = word2vec(OOVID, SEPID)
+    
 
 def normalize(s):
     """ enlève les accents et les caractères spéciaux"""
@@ -69,16 +70,17 @@ def code2string(t):
     return ''.join(id2lettre[i] for i in t)
 
 
-class FolderText(Dataset):
+class QuestionContextDataset(Dataset):
     """Dataset basé sur des dossiers (un par classe) et fichiers"""
-    def __init__(self, questions, passages):
+    def __init__(self, questions, passages, answers):
         self.data = {'text':[], 'label':[]}
         
-        corpus = list(set(passages))
-        for i in range(len(questions)):
-            
-            text = ['<sep>'.join(questions[i], c) for c in corpus]
-            label = [1 if passages[i] in t else 0 for t in text]
+        for q, c, a in tqdm(zip(questions, passages, answers)):
+            phrases = re.split('\s.', c)
+            print(phrases)
+
+            text = ['<sep>'.join([q, p]) for p in phrases]
+            label = [1 if a in p else 0 for p in phrases]
             self.data['text'] += text
             self.data['label'] += label
 
@@ -98,6 +100,7 @@ class FolderText(Dataset):
         p_char_tok = string2code(p)
 
         return q_word_tok, q_char_tok, p_word_tok, p_char_tok, self.data['label'][ix]
+    
 
 
 class TextDataset(Dataset):

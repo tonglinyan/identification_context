@@ -1,0 +1,10 @@
+pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
+pip install tensorboard==2.8.0
+pip uninstall protobuf
+pip install --no-binary protobuf protobuf
+pip install datamaestro==0.8.5
+pip install datamaestro-image
+pip install datamaestro-text
+pip install datamaestro-ml
+pip install git+https://github.com/huggingface/datasets
+

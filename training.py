@@ -1,72 +1,110 @@
 import torch
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-import torch.nn as nn
+from model import Encoder
+from tokenization import (
+    QuestionContextDataset, 
+    word2id)
+import numpy as np
+from torch.utils.data import DataLoader
+import argparse
+import sys
+from datasets import load_dataset
 
 
-class Learner:
-    """Base class for supervised learning"""
+def preprocess_data():
+    raw_dataset = load_dataset("squad")
+    
+    def generate_pairs(data):
+        questions = data["question"]
+        answers = [d['text'][0] for d in data['answers']]
+        context = data['context']
+        return [f'question: {q} answer: {a}' for q, a in zip(questions, answers)], context, answers
 
-    def __init__(self, model, model_id: str):
-        super().__init__()
-        self.model = model
-        self.optim = torch.optim.Adam(model.parameters(),lr=1e-4)
-        self.model_id = model_id
-        self.iteration = 0
+    data = {'train':{}, 'test':{}}
+    data['train']['questions'], data['train']['context'], data['train']['answers'] = generate_pairs(raw_dataset['train'])
+    data['test']['questions'], data['test']['context'], data['test']['answers'] = generate_pairs(raw_dataset['validation'])
 
-    def run(self,train_loader, test_loader, epochs, test_iterations, device,entropy_pen=0.):
+    return data['train'], data['test']
+    
+
+def parse_args():
+    parser = argparse.ArgumentParser('Evaluation script for each model in questeval.')
+    parser.add_argument('--dataset', default="squad", type=str)
+    parser.add_argument('--batch_size', help='batch-size', default=32, type=int)
+    parser.add_argument('--test_iterations', default=20, type=int)
+    parser.add_argument('--epochs', default=100, type=int)
+    parser.add_argument('--emb_size', default=150, type=int)
+    parser.add_argument('--dropout', default=0.1, type=float)
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(1)
+    return parser.parse_args()
+
+
+def main(epochs, test_iterations, batch_size, emb_size, dropout):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    PAD = word2id["<unk>"]
+    model = Encoder(emb_size, dropout)
+    optim = torch.optim.Adam(model.parameters(),lr=1e-4)
+    loss = torch.nn.CrossEntropyLoss()
+
+    train_data, test_data = preprocess_data()
+
+    train_data = QuestionContextDataset(train_data['questions'], train_data['context'], train_data['answers'])
+    test_data = QuestionContextDataset(test_data['questions'], test_data['context'], test_data['answers'])
+
+    train_loader = DataLoader(train_data, shuffle=True, batch_size=batch_size, collate_fn=collate)
+    test_loader = DataLoader(test_data, shuffle=True, batch_size=batch_size, collate_fn=collate)
+
+    def collate(batch):
+        """ Collate function for DataLoader """
+        data = [torch.LongTensor(item[0]) for item in batch]
+        lens = [len(d) for d in data]
+        labels = [item[1] for item in batch]
+        return torch.nn.utils.rnn.pad_sequence(data, batch_first=True, padding_value = PAD), torch.LongTensor(labels), torch.Tensor(lens)
+
+
+    def train(train_loader, test_loader, epochs, test_iterations, device):
         """Run a model during `epochs` epochs"""
-        writer = SummaryWriter(f"/tmp/runs/{self.model_id}")
-        model = self.model.to(device)
-        loss = nn.CrossEntropyLoss()
-        loss_nagg = nn.CrossEntropyLoss(reduction='sum')
+        iteration = 0
+        writer = SummaryWriter(f"/tmp/runs/s-net")
+        model = model.to(device)
 
         model.train()
         for epoch in tqdm(range(epochs)):
             # Iterate over batches
-            for x, y,lens in train_loader:
-                self.optim.zero_grad()
-                yhat = model(x.to(device),lens.to(device))
-                l = loss(yhat, y.to(device))
-                probs = model.attention(model.emb(x.to(device)),lens.to(device))
-                entrop = -(probs*(probs+1e-10).log()).sum(1).mean()
-                total_l = l+entropy_pen*entrop
-                total_l.backward()
-                self.optim.step()
-                writer.add_scalar('loss/train', l, self.iteration)
-                writer.add_scalar('loss/entrop',entrop,self.iteration)
-                writer.add_scalar('loss/total_train',total_l,self.iteration)
-                self.iteration += 1
+            cum_loss = 0
+            for x in train_loader:
+                optim.zero_grad()
+                yhat = model(x[0].to(device), x[1].to(device), x[2].to(device), x[3].to(device))
+                l = loss(yhat, x[4].to(device))
+                cum_loss += l/len(train_loader)
+                l.backward()
+                optim.step()
+                writer.add_scalar('loss/train', l, iteration)
+                writer.add_scalar('loss/total_train', cum_loss, iteration)
+                iteration += 1
                 
-                if self.iteration % test_iterations == 0:
+                if iteration % test_iterations == 0:
                     model.eval()
                     with torch.no_grad():
                         lst_probs = []
                         cumloss = 0
-                        cumcorrect = 0
-                        count = 0
                         for x, y, lens in test_loader:
                             yhat = model(x.to(device),lens.to(device))
-                            cumloss += loss_nagg(yhat, y.to(device))
-                            cumcorrect += (yhat.argmax(1) == y.to(device)).sum()
-                            count += x.shape[0]
-                            probs =  model.attention(model.emb(x.to(device)),lens.to(device))
-                            lst_probs.append(-(probs*(probs+1e-10).log()).sum(1))
-
+                            cumloss += LossFunction(yhat, y.to(device))/len(test_loader)
+                            
                         writer.add_scalar(
-                            'loss/test', cumloss.item() / count, self.iteration)
-                        writer.add_scalar(
-                            'correct/test', cumcorrect.item() / count, self.iteration)
-                        
-                        writer.add_histogram(f'entropy',torch.cat(lst_probs),self.iteration)
+                            'loss/test', cumloss, iteration)
+                        writer.add_histogram(f'entropy',torch.cat(lst_probs),iteration)
                         
                     model.train()
 
+    train(train_loader, test_loader, epochs, test_iterations, device)
 
-def collate(batch):
-    """ Collate function for DataLoader """
-    data = [torch.LongTensor(item[0]) for item in batch]
-    lens = [len(d) for d in data]
-    labels = [item[1] for item in batch]
-    return torch.nn.utils.rnn.pad_sequence(data, batch_first=True,padding_value = PAD), torch.LongTensor(labels), torch.Tensor(lens)
+if __name__ == "__main__":
+    args = parse_args()
+    main(args.epochs, args.test_iterations, args.batch_size, args.emb_size, args.dropout)
 
