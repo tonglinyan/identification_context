@@ -7,6 +7,7 @@ import numpy as np
 from torch.utils.data import Dataset
 import sys
 from tqdm import tqdm
+from nltk.tokenize import sent_tokenize
 
 def prepare_dataset(dataset_id: str):
     """Find a dataset given its id and download the resources"""
@@ -15,7 +16,7 @@ def prepare_dataset(dataset_id: str):
     return ds.prepare(download=True)
 
 
-def word2vec(OOVID, SEPID, embedding_size=50):
+def word2vec(OOVID, embedding_size=200):
     """Renvoie l'ensemble des donnéees nécessaires pour l'apprentissage (embedding_size = [50,100,200,300])
 
     - dictionnaire word vers ID
@@ -28,30 +29,27 @@ def word2vec(OOVID, SEPID, embedding_size=50):
 
     words, embeddings = prepare_dataset(
         'edu.stanford.glove.6b.%d' % embedding_size).load()
-
-    word2id = {word: ix for ix, word in enumerate(words)}
+    words = ['<unk>'] + words
+    word2id = {word: ix+1 for ix, word in enumerate(words)}
     word2id['<unk>'] = OOVID
-    word2id['<sep>'] = SEPID
-    words.append("<unk>")
-    words.append("<sep>")
+    
     id2word = dict(zip(word2id.values(),id2lettre.keys()))
-    ### lack of one embedding
-    embeddings = np.vstack((embeddings, np.zeros(embedding_size)))
-
+    embeddings = np.vstack((np.zeros(embedding_size), embeddings))
     return word2id, id2word, embeddings, WORDS
 
 
 ## Token de padding (BLANK)
 OOVID = 0
 ## Token de fin de séquence
-SEPID = -1
+#SEPID = -1
 LETTRES = string.ascii_letters + string.punctuation + string.digits + ' '
 id2lettre = dict(zip(range(1, len(LETTRES)+1), LETTRES))
 id2lettre[OOVID] = '<unk>' #PAD
-id2lettre[SEPID] = '<sep>'
+#id2lettre[SEPID] = '<sep>'
 lettre2id = dict(zip(id2lettre.values(),id2lettre.keys()))
 NUM_LETTRES = len(lettre2id)
-word2id, id2word, embeddings, WORDS = word2vec(OOVID, SEPID)
+embedding_size = 200
+word2id, id2word, embeddings, WORDS = word2vec(OOVID, embedding_size)
     
 
 def normalize(s):
@@ -75,9 +73,12 @@ class QuestionContextDataset(Dataset):
     def __init__(self, questions, passages, answers):
         self.data = {'text':[], 'label':[]}
         
+        import nltk
+        nltk.download('punkt')
+
         for q, c, a in tqdm(zip(questions, passages, answers)):
-            phrases = re.split('\s.', c)
-            print(phrases)
+            #phrases = re.split(r'(\.|\?|\!)', c)
+            phrases = sent_tokenize(c)
 
             text = ['<sep>'.join([q, p]) for p in phrases]
             label = [1 if a in p else 0 for p in phrases]
@@ -92,13 +93,19 @@ class QuestionContextDataset(Dataset):
     def __getitem__(self, ix):
         texts = self.data['text'][ix].split('<sep>')
         q, p = texts[0], texts[1]
+        
+        
+        def split_tokens(t):
+            return [x for x in re.findall(WORDS, t.lower())]
+
         def tokenizer(t):
-            return [word2id.get(x, OOVID) for x in re.findall(WORDS, t.lower())]
+            return torch.tensor([word2id.get(x, OOVID) for x in re.findall(WORDS, t.lower())])
+
         q_word_tok = tokenizer(q if isinstance(q, str) else q.read_text())
         p_word_tok = tokenizer(p if isinstance(p, str) else p.read_text())
-        q_char_tok = string2code(q)
-        p_char_tok = string2code(p)
-
+        q_char_tok = [string2code(t) for t in split_tokens(q)]
+        p_char_tok = [string2code(t) for t in split_tokens(p)]
+    
         return q_word_tok, q_char_tok, p_word_tok, p_char_tok, self.data['label'][ix]
     
 

@@ -7,4 +7,5 @@ pip install datamaestro-image
 pip install datamaestro-text
 pip install datamaestro-ml
 pip install git+https://github.com/huggingface/datasets
+pip install nltk
 
