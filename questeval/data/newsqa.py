@@ -50,7 +50,7 @@ _LICENSE = ""
 # This can be an arbitrary nested dict/list of URLs (see below in `_split_generators` method)
 _URLS = {
     'train': "./newsqa_train.csv", 
-    'valid': "./newsqa_dev.csv", 
+    'validation': "./newsqa_dev.csv", 
     'test': "./newsqa_test.csv", 
 }
 
@@ -134,7 +134,7 @@ class WebNLGDataset(datasets.GeneratorBasedBuilder):
                 name=datasets.Split.VALIDATION,
                 # These kwargs will be passed to _generate_examples
                 gen_kwargs={
-                    "filepath": os.path.join(data_dir['valid']),
+                    "filepath": os.path.join(data_dir['validation']),
                     "split": "dev",
                 },
             ),
@@ -158,7 +158,6 @@ class WebNLGDataset(datasets.GeneratorBasedBuilder):
                         answers.append(context[i])
 
                 answers.append(".")
-            
 
                 # Yields examples as (key, example) tuples
                 yield key, {

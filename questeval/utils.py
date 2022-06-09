@@ -8,11 +8,12 @@ import hashlib
 from datasets import load_dataset
 from huggingface_hub import hf_hub_download
 from transformers import (
-    T5ForConditionalGeneration,
-    T5Tokenizer,
+    AutoTokenizer,
+    AutoModelForSeq2SeqLM, 
+    AutoModelForSequenceClassification
 )
 
-
+"""
 def _load_webnlg()-> Dict:
     raw_datasets = load_dataset("web_nlg", "webnlg_challenge_2017")
 
@@ -28,7 +29,7 @@ def _load_webnlg()-> Dict:
             triples += triple 
         
     return texts, triples
-
+"""
 
 # encryptographe
 def text2hash(string: str) -> str:
@@ -65,28 +66,122 @@ def sentencize(
     return [sentence_tuple[0] for sentence_tuple in split_on_punct(preprocessed_context)]
 
 
+def clean_obj(
+    s,
+    lc: bool = False
+):
+    s = unidecode.unidecode(s)
+    if lc: s = s.lower()
+    s = re.sub('^"|"$', "", s)  # remove useless quotesigns
+    s = re.sub('_', ' ', s)  # turn underscores to spaces
+    return s
+
+
+def clean_table(rows, header):
+
+    def clean_row(row):
+
+        new_row = []
+        start = -1
+        for i in range(len(row)):
+
+            if '"' in row[i]:
+                if start == -1:
+                    start = i
+                else:
+                    words = ''.join([row[j] for j in range(start, i+1)])
+                    start = -1
+                    new_row.append(words)
+            else:
+                if start == -1:
+                    new_row.append(row[i])
+        return new_row
+    
+    header = clean_row(header)
+
+    new_rows = [header]
+    for row in rows:
+        new_row = clean_row(row)
+        assert len(header) == len(new_row)
+        new_rows.append(new_row)
+
+    return new_rows
+
+
+def normalize_answer(s):
+        """Lower text and remove punctuation, articles and extra whitespace."""
+
+        def remove_articles(text):
+            regex = re.compile(r'\b(a|an|the)\b', re.UNICODE)
+            return re.sub(regex, ' ', text)
+
+        def white_space_fix(text):
+            return ' '.join(text.split())
+
+        def remove_punc(text):
+            exclude = set(string.punctuation)
+            return ''.join(ch for ch in text if ch not in exclude)
+
+        def lower(text):
+            return text.lower()
+
+        return white_space_fix(remove_articles(remove_punc(lower(s))))
+
+
+def get_tokens(s):
+        if not s: return []
+        return normalize_answer(s).split()
+
+
+# extract answer from: text [answer] text
+def extract_table_answers(
+    text: str
+) -> List[str]:
+
+    asws = []
+
+    asw_toks = []
+    is_asw = False
+    for tok in text.split():
+
+        if tok == ']':
+            asws.append(' '.join(asw_toks))
+            is_asw = False
+            asw_toks = []
+
+        if is_asw:
+            asw_toks.append(tok)
+
+        if tok == '[':
+            is_asw = True
+    return asws
 class API_T2T:
     def __init__(
         self,
-        # model name
         pretrained_model_name_or_path: str,
         max_source_length: int,
         model_batch_size: int,
         keep_score_idx: int,  # Note: will work only if beamsize == 1
+        task: str = None, 
         device: str = "cuda"
     ) -> None:
 
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
         #print(self.pretrained_model_name_or_path)
         # import tokenizer from hugging face
-        self.tokenizer = T5Tokenizer.from_pretrained(
+        self.tokenizer = AutoTokenizer.from_pretrained(
             pretrained_model_name_or_path = self.pretrained_model_name_or_path
         )
-        # import model from hugging face
-        self.model = T5ForConditionalGeneration.from_pretrained(
-            pretrained_model_name_or_path = self.pretrained_model_name_or_path
-        )
-
+        
+        if task == 'IC':
+            # import model from hugging face
+            self.model = AutoModelForSequenceClassification.from_pretrained(
+                pretrained_model_name_or_path = self.pretrained_model_name_or_path
+            )
+        else: 
+            self.model = AutoModelForSeq2SeqLM.from_pretrained(
+                pretrained_model_name_or_path = self.pretrained_model_name_or_path
+            )
         self.keep_score_idx = keep_score_idx
 
         if device == "cuda":
@@ -96,7 +191,7 @@ class API_T2T:
 
     def predict(
         self,
-        sources: List[str],
+        sources, 
     ):
         ### sources should be question <s> context ###
 
@@ -105,7 +200,7 @@ class API_T2T:
         
         # padding: true/longest/max_length/false
         # truncation: true (cut at the "max_length") / false 
-        for i in range(0, len(sources), self.model_batch_size):
+        """for i in range(0, len(sources), self.model_batch_size):
             
             inputs = self.tokenizer(
                 sources[i: i+self.model_batch_size],
@@ -141,117 +236,45 @@ class API_T2T:
                 if len(gen_text) != 1:
                     keep_score_idx_score = keep_score_idx_score.squeeze()
                 keep_score_idx_scores += keep_score_idx_score.tolist()
+        """
+        inputs = self.tokenizer(
+            sources,
+            max_length=self.max_source_length,
+            padding="max_length",
+            truncation=True,
+            return_tensors="pt",
+            verbose=False,
+        )
+    
+        with torch.no_grad():
+            source_ids, source_mask = inputs["input_ids"], inputs["attention_mask"]
+            dict_generated_ids = self.model.generate(
+                input_ids=source_ids.to(self.model.device),
+                attention_mask=source_mask.to(self.model.device),
+                use_cache=True,
+                decoder_start_token_id=None,
+                num_beams=1,
+                num_return_sequences=1,
+                do_sample=False,
+                output_scores=True,
+                return_dict_in_generate=True
+            )
+            gen_text = self.tokenizer.batch_decode(
+                dict_generated_ids['sequences'],
+                skip_special_tokens=True,
+                clean_up_tokenization_spaces=True
+            )
+
+            gen_texts += gen_text
+
+            keep_score_idx_score = (1 - dict_generated_ids['scores'][0].softmax(-1)[:, self.keep_score_idx])
+            if len(gen_text) != 1:
+                keep_score_idx_score = keep_score_idx_score.squeeze()
+            keep_score_idx_scores += keep_score_idx_score.tolist()
 
         # Note: self.model.additional_scores_idx keep in memory probs only if beam == 1;
         #   it is usefull only when T5 is used as a classifier so far.
         return keep_score_idx_scores, gen_texts
-
-def normalize_answer(s):
-        """Lower text and remove punctuation, articles and extra whitespace."""
-
-        def remove_articles(text):
-            regex = re.compile(r'\b(a|an|the)\b', re.UNICODE)
-            return re.sub(regex, ' ', text)
-
-        def white_space_fix(text):
-            return ' '.join(text.split())
-
-        def remove_punc(text):
-            exclude = set(string.punctuation)
-            return ''.join(ch for ch in text if ch not in exclude)
-
-        def lower(text):
-            return text.lower()
-
-        return white_space_fix(remove_articles(remove_punc(lower(s))))
-
-
-def calculate_f1_squad(
-    a_gold: str,
-    a_pred: str
-) -> float:
-
-    def get_tokens(s):
-        if not s: return []
-        return normalize_answer(s).split()
-
-    gold_toks = get_tokens(a_gold)
-    pred_toks = get_tokens(a_pred)
-    common = collections.Counter(gold_toks) & collections.Counter(pred_toks)
-    num_same = sum(common.values())
-    if len(gold_toks) == 0 or len(pred_toks) == 0:
-        # If either is no-answer, then F1 is 1 if they agree, 0 otherwise
-        return int(gold_toks == pred_toks)
-    if num_same == 0:
-        return 0
-    precision = 1.0 * num_same / len(pred_toks)
-    recall = 1.0 * num_same / len(gold_toks)
-    f1 = (2 * precision * recall) / (precision + recall)
-    return f1
-
-
-
-def calculate_BERTScore(
-    model_predictions: List[str],
-    gold_references: List[str],
-    metric_BERTScore,
-    device: str,
-) -> List[float]:
-
-    if len(model_predictions) == 0:
-        return []
-
-    metric_BERTScore.add_batch(predictions=model_predictions, references=gold_references)
-    final_score = metric_BERTScore.compute(model_type='bert-base-multilingual-cased', device=device)
-
-    """
-    # set all unanswerable scores to 0
-    for i, (pred) in enumerate(model_predictions):
-        if pred == "unanswerable":
-            final_score['f1'][i] = 0.0
-    """
-    return [f1 for f1 in final_score['f1']]
-
-
-
-# extract answer from: text [answer] text
-def extract_table_answers(
-    text: str
-) -> List[str]:
-
-    asws = []
-
-    asw_toks = []
-    is_asw = False
-    for tok in text.split():
-
-        if tok == ']':
-            asws.append(' '.join(asw_toks))
-            is_asw = False
-            asw_toks = []
-
-        if is_asw:
-            asw_toks.append(tok)
-
-        if tok == '[':
-            is_asw = True
-    return asws
-
-
-#######################################################################
-#                E2E: entity to entity
-class WrongE2EFormat(
-    Exception
-):
-    def __init__(self, obj):
-        err = """
-            It seems you passed an objected weirdly formatted.
-            For E2E, please give a Meaning Representation as a string, 
-            formatted as below:
-                input = 'name[The Eagle], eatType[coffee shop], food[Japanese]'
-            Your object was: {}
-        """
-        super().__init__(err.format(obj))
 
 
 def linearize_e2e_input(
@@ -277,11 +300,9 @@ def linearize_e2e_input(
         f'{key} [ {value} ]'
         for key, value in items.items()
     ])
-########################################################################
 
 
-
-def LinearizeWTQInput(
+def LinearizeDataInput(
     header: List,
     table: List,
 ):
@@ -293,19 +314,7 @@ def LinearizeWTQInput(
         
     return '. '.join(entites)
 
-def clean_obj(
-    s,
-    lc: bool = False
-):
-    s = unidecode.unidecode(s)
-    if lc: s = s.lower()
-    s = re.sub('^"|"$', "", s)  # remove useless quotesigns
-    s = re.sub('_', ' ', s)  # turn underscores to spaces
-    return s
 
-
-
-# for structured data source
 class LinearizeWebnlgInput():
 
     def __init__(
@@ -429,6 +438,20 @@ class Triple:
         return s.strip()
 
 
+class WrongE2EFormat(
+    Exception
+):
+    def __init__(self, obj):
+        err = """
+            It seems you passed an objected weirdly formatted.
+            For E2E, please give a Meaning Representation as a string, 
+            formatted as below:
+                input = 'name[The Eagle], eatType[coffee shop], food[Japanese]'
+            Your object was: {}
+        """
+        super().__init__(err.format(obj))
+
+
 class WrongWebNlgFormat(Exception):
     def __init__(self, obj):
         err = """
@@ -443,3 +466,49 @@ class WrongWebNlgFormat(Exception):
             Your object was: {}
         """
         super().__init__(err.format(obj))
+
+
+def calculate_f1_squad(
+    a_gold: str,
+    a_pred: str
+) -> float:
+
+    gold_toks = get_tokens(a_gold)
+    pred_toks = get_tokens(a_pred)
+    common = collections.Counter(gold_toks) & collections.Counter(pred_toks)
+    num_same = sum(common.values())
+    if len(gold_toks) == 0 or len(pred_toks) == 0:
+        # If either is no-answer, then F1 is 1 if they agree, 0 otherwise
+        return int(gold_toks == pred_toks)
+    if num_same == 0:
+        return 0
+    precision = 1.0 * num_same / len(pred_toks)
+    recall = 1.0 * num_same / len(gold_toks)
+    f1 = (2 * precision * recall) / (precision + recall)
+    return f1
+
+
+def calculate_exact(a_gold, a_pred):
+    return int(normalize_answer(a_gold) == normalize_answer(a_pred))
+
+
+def calculate_BERTScore(
+    model_predictions: List[str],
+    gold_references: List[str],
+    metric_BERTScore,
+    device: str,
+) -> List[float]:
+
+    if len(model_predictions) == 0:
+        return []
+
+    metric_BERTScore.add_batch(predictions=model_predictions, references=gold_references)
+    final_score = metric_BERTScore.compute(model_type='bert-base-multilingual-cased', device=device)
+
+    """
+    # set all unanswerable scores to 0
+    for i, (pred) in enumerate(model_predictions):
+        if pred == "unanswerable":
+            final_score['f1'][i] = 0.0
+    """
+    return [f1 for f1 in final_score['f1']]

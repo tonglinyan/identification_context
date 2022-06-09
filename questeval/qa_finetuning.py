@@ -44,6 +44,10 @@ from transformers.trainer_utils import EvalLoopOutput, EvalPrediction, get_last_
 from transformers.utils import check_min_version
 from transformers.utils.versions import require_version
 
+from utils import (
+    LinearizeDataInput, 
+    clean_table,
+)
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
 check_min_version("4.20.0.dev0")
@@ -439,61 +443,28 @@ def main():
         context_column: str, 
         answer_column: str
     ) -> Tuple[List[str], List[str]]:
-        questions = examples[question_column]
-        answers = [', '.join(a) for a in examples[answer_column]]
-        positions = examples["position"]
-        domain = [answers[i-1] if positions[i] != 0 else " " for i in range(1, len(answers))]
-        domain = [" "] + domain
-
-
-        def linearization(header, data):
-            entites = []
-
-            def clean_obj(
-                s,
-                lc: bool = False
-            ):
-                s = unidecode.unidecode(s)
-                if lc: s = s.lower()
-                s = re.sub('^"|"$', "", s)  # remove useless quotesigns
-                s = re.sub('_', ' ', s)  # turn underscores to spaces
-                return s
-
-            for r in data:
-                e = [f'{clean_obj(h)} [ {clean_obj(v)} ]' for h, v in zip(header, r)]
-                entites.append(' , '.join(e))
-            return '; '.join(entites)
-        """
-
-        def linearization(header, data):
-
-            def clean_obj(
-                s,
-                lc: bool = False
-            ):
-                s = unidecode.unidecode(s)
-                if lc: s = s.lower()
-                s = re.sub('^"|"$', "", s)  # remove useless quotesigns
-                s = re.sub('_', ' ', s)  # turn underscores to spaces
-                return s
-
-            entites = {h: [] for h in header}
-            context = []
-            for r in data:
-                for h, v in zip(header, r):
-                    entites[h].append(clean_obj(v))
-            for h in header:
-                e = ", ".join(entites[h])
-                context.append(f'{clean_obj(h)} [ {e} ]')
-
-            return '; '.join(context)
-        """
-        def generate_input(_question, _context, _domain):
-            return " ".join(["question:", _question.lstrip(), "context:", _context.lstrip(), "Domain [", _domain.lstrip(), "]"])
+        position = examples["position"]
+        all_questions = examples[question_column]
+        all_headers = examples[context_column]
+        all_answers = [', '.join(a) for a in examples[answer_column]]
+        all_tables = examples["table_data"]
         
-        contexts = [linearization(h, d) for h, d in zip(examples[context_column], examples["table_data"])]
+        questions, headers, answers, tables = [], [], [], []
+        for i in range(len(all_questions)):
+            if position[i] == 0:             
+                questions.append(all_questions[i])
+                answers.append(all_answers[i])
+                headers.append(all_headers[i])
+                tables.append(all_tables[i])
+        tables = [clean_table(t, h) for t, h in zip(tables, headers)]
+        assert len(questions) == len(answers) == len(headers) == len(tables)
+        
+        def generate_input(_question, _context):
+            return " ".join(["question:", _question.lstrip(), "context:", _context.lstrip(), "]"])
+        
+        contexts = [LinearizeDataInput(t[0], t[1:]) for t in tables]
 
-        inputs = [generate_input(question, context, d) for question, context, d in zip(questions, contexts, domain)]
+        inputs = [generate_input(question, context) for question, context in zip(questions, contexts)]
         targets = answers
         return inputs, targets
 
@@ -511,29 +482,10 @@ def main():
         header = [c['header'] for c in context]
         table = [c['rows'] for c in context]
 
-
-        def linearization(header, data):
-            entites = []
-
-            def clean_obj(
-                s,
-                lc: bool = False
-            ):
-                s = unidecode.unidecode(s)
-                if lc: s = s.lower()
-                s = re.sub('^"|"$', "", s)  # remove useless quotesigns
-                s = re.sub('_', ' ', s)  # turn underscores to spaces
-                return s
-
-            for r in data:
-                e = [f'{clean_obj(h)} [ {clean_obj(v)} ]' for h, v in zip(header, r)]
-                entites.append(' , '.join(e))
-            return '; '.join(entites)
-
         def generate_input(_question, _context):
             return " ".join(["question:", _question.lstrip(), "context:", _context.lstrip()])
         
-        contexts = [linearization(h, d) for h, d in zip(header, table)]
+        contexts = [LinearizeDataInput(h, d) for h, d in zip(header, table)]
 
         inputs = [generate_input(question, context) for question, context in zip(questions, contexts)]
         targets = answers

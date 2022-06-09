@@ -14,8 +14,6 @@
 # TODO: Address all TODOs and remove all explanatory comments
 """TODO: Add a description here."""
 
-
-
 import json
 import os
 
@@ -50,7 +48,7 @@ _LICENSE = ""
 # This can be an arbitrary nested dict/list of URLs (see below in `_split_generators` method)
 _URLS = {
     'train': "./webnlg_qgqa_train.json", 
-    'valid': "./webnlg_qgqa_dev.json", 
+    'validation': "./webnlg_qgqa_dev.json", 
     'test': "./webnlg_qgqa_test.json", 
 }
 
@@ -135,7 +133,7 @@ class WebNLGDataset(datasets.GeneratorBasedBuilder):
                 name=datasets.Split.VALIDATION,
                 # These kwargs will be passed to _generate_examples
                 gen_kwargs={
-                    "filepath": os.path.join(data_dir['valid']),
+                    "filepath": os.path.join(data_dir['validation']),
                     "split": "dev",
                 },
             ),
