@@ -126,7 +126,7 @@ class SQuADCLSDataset(datasets.GeneratorBasedBuilder):
                 # These kwargs will be passed to _generate_examples
                 gen_kwargs={
                     "filepath": os.path.join(data_dir['validation']), 
-                    "split": "dev",
+                    "split": "validation",
                 },
             ),
         ]
@@ -144,7 +144,7 @@ class SQuADCLSDataset(datasets.GeneratorBasedBuilder):
             
             paras = d['paragraphs']
 
-            corpus, labels, s1, s2 = [], [], [], []
+            corpus, s1 = [], []
             for p in paras:
                 corpus.append(p['context'])
             for p in paras:           

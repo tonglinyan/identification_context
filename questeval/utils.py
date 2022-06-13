@@ -8,8 +8,9 @@ import hashlib
 from datasets import load_dataset
 from huggingface_hub import hf_hub_download
 from transformers import (
-    AutoTokenizer,
-    AutoModelForSeq2SeqLM, 
+    T5Tokenizer, 
+    T5ForConditionalGeneration,
+    AutoTokenizer, 
     AutoModelForSequenceClassification
 )
 
@@ -155,6 +156,8 @@ def extract_table_answers(
         if tok == '[':
             is_asw = True
     return asws
+
+
 class API_T2T:
     def __init__(
         self,
@@ -162,26 +165,19 @@ class API_T2T:
         max_source_length: int,
         model_batch_size: int,
         keep_score_idx: int,  # Note: will work only if beamsize == 1
-        task: str = None, 
         device: str = "cuda"
     ) -> None:
 
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
         #print(self.pretrained_model_name_or_path)
         # import tokenizer from hugging face
-        self.tokenizer = AutoTokenizer.from_pretrained(
+        self.tokenizer = T5Tokenizer.from_pretrained(
             pretrained_model_name_or_path = self.pretrained_model_name_or_path
         )
         
-        if task == 'IC':
-            # import model from hugging face
-            self.model = AutoModelForSequenceClassification.from_pretrained(
-                pretrained_model_name_or_path = self.pretrained_model_name_or_path
-            )
-        else: 
-            self.model = AutoModelForSeq2SeqLM.from_pretrained(
-                pretrained_model_name_or_path = self.pretrained_model_name_or_path
-            )
+        self.model = T5ForConditionalGeneration.from_pretrained(
+            pretrained_model_name_or_path = self.pretrained_model_name_or_path
+        )
         self.keep_score_idx = keep_score_idx
 
         if device == "cuda":
@@ -200,8 +196,8 @@ class API_T2T:
         
         # padding: true/longest/max_length/false
         # truncation: true (cut at the "max_length") / false 
-        """for i in range(0, len(sources), self.model_batch_size):
-            
+        for i in range(0, len(sources), self.model_batch_size):
+
             inputs = self.tokenizer(
                 sources[i: i+self.model_batch_size],
                 max_length=self.max_source_length,
@@ -236,44 +232,90 @@ class API_T2T:
                 if len(gen_text) != 1:
                     keep_score_idx_score = keep_score_idx_score.squeeze()
                 keep_score_idx_scores += keep_score_idx_score.tolist()
-        """
-        inputs = self.tokenizer(
-            sources,
-            max_length=self.max_source_length,
-            padding="max_length",
-            truncation=True,
-            return_tensors="pt",
-            verbose=False,
+        
+        return keep_score_idx_scores, gen_texts
+
+
+class API_BERT:
+    def __init__(
+        self,
+        pretrained_model_name_or_path: str,
+        max_source_length: int,
+        model_batch_size: int,
+        keep_score_idx: int,  # Note: will work only if beamsize == 1
+        device: str = "cuda"
+    ) -> None:
+
+        self.pretrained_model_name_or_path = pretrained_model_name_or_path
+        #print(self.pretrained_model_name_or_path)
+        # import tokenizer from hugging face
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            pretrained_model_name_or_path = self.pretrained_model_name_or_path
         )
-    
-        with torch.no_grad():
-            source_ids, source_mask = inputs["input_ids"], inputs["attention_mask"]
-            dict_generated_ids = self.model.generate(
-                input_ids=source_ids.to(self.model.device),
-                attention_mask=source_mask.to(self.model.device),
-                use_cache=True,
-                decoder_start_token_id=None,
-                num_beams=1,
-                num_return_sequences=1,
-                do_sample=False,
-                output_scores=True,
-                return_dict_in_generate=True
+        
+        # import model from hugging face
+        self.model = AutoModelForSequenceClassification.from_pretrained(
+            pretrained_model_name_or_path = self.pretrained_model_name_or_path
+        )
+
+        self.keep_score_idx = keep_score_idx
+
+        if device == "cuda":
+            self.model.cuda()
+        self.max_source_length = max_source_length
+        self.model_batch_size = model_batch_size
+
+    def predict(
+        self,
+        sources, 
+    ):
+        ### sources should be question <s> context ###
+
+        gen_texts = []
+        keep_score_idx_scores = []
+        
+        
+        # padding: true/longest/max_length/false
+        # truncation: true (cut at the "max_length") / false 
+        for i in range(0, len(sources), self.model_batch_size):
+            args = ((sources[0][i:i+self.model_batch_size], sources[1][i:i+self.model_batch_size]))
+            print(args)
+            inputs = self.tokenizer(
+                *args, 
+                max_length=self.max_source_length,
+                padding="max_length",
+                truncation=True,
+                return_tensors="pt",
+                verbose=False,
             )
-            gen_text = self.tokenizer.batch_decode(
-                dict_generated_ids['sequences'],
-                skip_special_tokens=True,
-                clean_up_tokenization_spaces=True
-            )
+        
 
-            gen_texts += gen_text
+            with torch.no_grad():
+                source_ids, source_mask = inputs["input_ids"], inputs["attention_mask"]
+                dict_generated_ids = self.model.generate(
+                    input_ids=source_ids.to(self.model.device),
+                    attention_mask=source_mask.to(self.model.device),
+                    use_cache=True,
+                    decoder_start_token_id=None,
+                    num_beams=1,
+                    num_return_sequences=1,
+                    do_sample=False,
+                    output_scores=True,
+                    return_dict_in_generate=True
+                )
+                gen_text = self.tokenizer.batch_decode(
+                    dict_generated_ids['sequences'],
+                    skip_special_tokens=True,
+                    clean_up_tokenization_spaces=True
+                )
 
-            keep_score_idx_score = (1 - dict_generated_ids['scores'][0].softmax(-1)[:, self.keep_score_idx])
-            if len(gen_text) != 1:
-                keep_score_idx_score = keep_score_idx_score.squeeze()
-            keep_score_idx_scores += keep_score_idx_score.tolist()
+                gen_texts += gen_text
 
-        # Note: self.model.additional_scores_idx keep in memory probs only if beam == 1;
-        #   it is usefull only when T5 is used as a classifier so far.
+                keep_score_idx_score = (1 - dict_generated_ids['scores'][0].softmax(-1)[:, self.keep_score_idx])
+                if len(gen_text) != 1:
+                    keep_score_idx_score = keep_score_idx_score.squeeze()
+                keep_score_idx_scores += keep_score_idx_score.tolist()
+            
         return keep_score_idx_scores, gen_texts
 
 
@@ -504,11 +546,12 @@ def calculate_BERTScore(
 
     metric_BERTScore.add_batch(predictions=model_predictions, references=gold_references)
     final_score = metric_BERTScore.compute(model_type='bert-base-multilingual-cased', device=device)
-
     """
     # set all unanswerable scores to 0
     for i, (pred) in enumerate(model_predictions):
         if pred == "unanswerable":
             final_score['f1'][i] = 0.0
     """
+    
     return [f1 for f1 in final_score['f1']]
+    

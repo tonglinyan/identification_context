@@ -16,18 +16,19 @@ from tqdm import tqdm
 import torch
 #from questeval.bertscore import BERTScore
 from utils import (
+    API_BERT, 
     API_T2T,
     LinearizeDataInput,
     clean_table, 
     clean_obj,
     calculate_f1_squad, 
     calculate_BERTScore, 
-    calculate_exact, 
+    calculate_exact
 )
 import argparse
 import sys
 import collections
-from nltk.translate.bleu_score import sentence_bleu
+#from nltk.translate.bleu_score import sentence_bleu
 
 DIR = os.path.dirname("__file__")
 __version__ = "0.2.4"
@@ -348,10 +349,9 @@ class Evaluation:
         st1: List[str],
         st2: List[str],
     ):
-        preds = []    
-        for i in range(0, len(st1), self.model.model_batch_size):
-            input = [(s1, s2) for s1, s2 in zip(st1[i: i+self.model.model_batch_size], st2[i: i+self.model.model_batch_size])]
-            preds += self.model.predict(input)
+
+        input = ((st1, st2))
+        preds = self.model.predict(input)
         return preds
         
 
@@ -364,14 +364,25 @@ class Evaluation:
         # batch size
         model_batch_size = self.qg_batch_size if 'qg' in model_name.lower() else self.clf_batch_size
 
-        model = API_T2T(
-            pretrained_model_name_or_path=model_name,
-            keep_score_idx=keep_score_idx,
-            max_source_length=512,
-            model_batch_size=model_batch_size,
-            device=self.device, 
-            task=self.task, 
-        )
+        if self.task == 'IC':
+            model = API_BERT(
+                pretrained_model_name_or_path=model_name,
+                keep_score_idx=keep_score_idx,
+                max_source_length=512,
+                model_batch_size=model_batch_size,
+                device=self.device, 
+            )
+
+        else:
+            model = API_T2T(
+                pretrained_model_name_or_path=model_name,
+                keep_score_idx=keep_score_idx,
+                max_source_length=512,
+                model_batch_size=model_batch_size,
+                device=self.device, 
+            )
+
+
 
         return model
 
