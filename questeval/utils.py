@@ -5,6 +5,7 @@ import unidecode
 import collections
 import torch
 import hashlib
+import numpy as np
 from datasets import load_dataset
 from huggingface_hub import hf_hub_download
 from transformers import (
@@ -232,7 +233,7 @@ class API_T2T:
                 if len(gen_text) != 1:
                     keep_score_idx_score = keep_score_idx_score.squeeze()
                 keep_score_idx_scores += keep_score_idx_score.tolist()
-        
+
         return keep_score_idx_scores, gen_texts
 
 
@@ -260,63 +261,33 @@ class API_BERT:
 
         self.keep_score_idx = keep_score_idx
 
-        if device == "cuda":
-            self.model.cuda()
+        #if device == "cuda":
+        #    self.model.cuda()
         self.max_source_length = max_source_length
         self.model_batch_size = model_batch_size
 
     def predict(
         self,
-        sources, 
+        st1,
+        st2 
     ):
-        ### sources should be question <s> context ###
 
-        gen_texts = []
-        keep_score_idx_scores = []
-        
-        
-        # padding: true/longest/max_length/false
-        # truncation: true (cut at the "max_length") / false 
-        for i in range(0, len(sources), self.model_batch_size):
-            args = ((sources[0][i:i+self.model_batch_size], sources[1][i:i+self.model_batch_size]))
-            print(args)
-            inputs = self.tokenizer(
-                *args, 
-                max_length=self.max_source_length,
-                padding="max_length",
-                truncation=True,
-                return_tensors="pt",
-                verbose=False,
-            )
-        
+        args = ((st1, st2))
 
-            with torch.no_grad():
-                source_ids, source_mask = inputs["input_ids"], inputs["attention_mask"]
-                dict_generated_ids = self.model.generate(
-                    input_ids=source_ids.to(self.model.device),
-                    attention_mask=source_mask.to(self.model.device),
-                    use_cache=True,
-                    decoder_start_token_id=None,
-                    num_beams=1,
-                    num_return_sequences=1,
-                    do_sample=False,
-                    output_scores=True,
-                    return_dict_in_generate=True
-                )
-                gen_text = self.tokenizer.batch_decode(
-                    dict_generated_ids['sequences'],
-                    skip_special_tokens=True,
-                    clean_up_tokenization_spaces=True
-                )
-
-                gen_texts += gen_text
-
-                keep_score_idx_score = (1 - dict_generated_ids['scores'][0].softmax(-1)[:, self.keep_score_idx])
-                if len(gen_text) != 1:
-                    keep_score_idx_score = keep_score_idx_score.squeeze()
-                keep_score_idx_scores += keep_score_idx_score.tolist()
+        inputs = self.tokenizer(
+            *args, 
+            max_length=self.max_source_length,
+            padding="max_length",
+            truncation=True,
+            return_tensors="pt",
+            verbose=False,
+        )
+    
+        with torch.no_grad():
+            logits = self.model(**inputs)['logits']
+            preds = np.argmax(logits, axis=-1).tolist()
             
-        return keep_score_idx_scores, gen_texts
+        return preds
 
 
 def linearize_e2e_input(

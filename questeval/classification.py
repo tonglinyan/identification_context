@@ -365,6 +365,7 @@ def main():
     else:
         # Trying to have good defaults here, don't hesitate to tweak to your needs.
         is_regression = raw_datasets["train"].features["label"].dtype in ["float32", "float64"]
+
         if is_regression:
             num_labels = 1
         else:
@@ -372,6 +373,7 @@ def main():
             # https://huggingface.co/docs/datasets/package_reference/main_classes.html#datasets.Dataset.unique
             label_list = raw_datasets["train"].unique("label")
             label_list.sort()  # Let's sort it for determinism
+            #num_labels = label_list[-1]
             num_labels = len(label_list)
 
     # Load pretrained model and tokenizer
@@ -468,6 +470,7 @@ def main():
         # Map labels to IDs (not necessary for GLUE tasks)
         if label_to_id is not None and "label" in examples:
             result["label"] = [(label_to_id[l] if l != -1 else -1) for l in examples["label"]]
+
         return result
 
     with training_args.main_process_first(desc="dataset map pre-processing"):

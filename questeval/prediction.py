@@ -90,17 +90,27 @@ class Evaluation:
         self._load_all_models()
         self._load_dataset()
         preds = self._prediction()
+        """
+        with open(f'{self.task}_{self.dataset}_{self.author}.json', 'r') as f:
+            data = json.load(f)
+        data = list(filter(None, data))
+        for log in data:
+            log['context'] = list(filter(None, log['context']))
+            log['prediction'] = list(filter(None, log['prediction']))
+        with open(f'{self.task}_{self.dataset}_{self.author}.json', 'w') as f:
+            json.dump(data, f, indent=4)
+        """
         self._save_json(preds)
+        
+        """
         #with open(f'{self.task}_{author}.json', 'r') as f:
         #    data = json.load(f)
 
         #self.answer = [d['answer'] for d in data]
         #self.question = [d['question'] for d in data]
         #preds = [d['prediction'] for d in data]
-        
+        """
         print(self._evaluation(preds))
-        #self._save_json(preds, author)
-
 
 
     def _load_all_models(self):
@@ -149,7 +159,6 @@ class Evaluation:
             )
             test_set = raw_datasets['validation']
             self.sentence1, self.sentence2, self.label = test_set['sentence1'], test_set['sentence2'], test_set['label'],
-
 
     def _load_squad(self):
         raw_dataset = load_dataset('squad')['validation']
@@ -226,9 +235,23 @@ class Evaluation:
         preds: List
     ):
         data = []
-        for c, q, a, p in zip(self.text, self.question, self.answer, preds):
-            log = {"table":c, "question": q, "answer": a, "prediction": p}        
-            data.append(log)
+        if self.task == 'IC':
+            qa_pair, log = None, None
+            for s1, s2, l, p in zip(self.sentence1, self.sentence2, self.label, preds):
+                if s1 == qa_pair:
+                    log['context'].append(s2 if l == 1 else None)
+                    log['prediction'].append(s2 if p == 1 else None)
+                else:
+                    log['context'] = list(filter(None, log['context']))
+                    log['prediction'] = list(filter(None, log['prediction']))
+                    data.append(log)
+                    log = {'question-answer:': s1, 'context': [s2 if l == 1 else None], 'prediction': [s2 if p == 1 else None]}
+                    qa_pair = s1
+            data = list(filter(None, data))
+        else:
+            for c, q, a, p in zip(self.text, self.question, self.answer, preds):
+                log = {"table": c, "question": q, "answer": a, "prediction": p}        
+                data.append(log)
 
         with open(f'{self.task}_{self.dataset}_{self.author}.json', 'w') as f:
             json.dump(data, f, indent=4)
@@ -259,12 +282,13 @@ class Evaluation:
                 preds += pred
         
         if self.task == 'IC':
-            preds =[]
+            preds = []
+            self.label = self.label[:int(0.3*len(self.label))]
             for idx in tqdm(range(0, len(self.label), batch_size)):
-                pred = self._predict_label(self.sentence1, self.sentence2)
-                assert len(pred) == len(to_do_exs)
+                pred = self.model.predict(self.sentence1[idx:idx+batch_size], self.sentence2[idx:idx+batch_size])
                 preds += pred
-
+            
+            assert len(preds) == len(self.label)
         return preds
 
     def _evaluation(
@@ -342,17 +366,6 @@ class Evaluation:
         qa_scores, qa_texts = self.model.predict(formated_inputs)
 
         return qa_scores, qa_texts
-
-
-    def _predict_label(
-        self, 
-        st1: List[str],
-        st2: List[str],
-    ):
-
-        input = ((st1, st2))
-        preds = self.model.predict(input)
-        return preds
         
 
     def get_model(self, model_name: str):
@@ -381,8 +394,6 @@ class Evaluation:
                 model_batch_size=model_batch_size,
                 device=self.device, 
             )
-
-
 
         return model
 

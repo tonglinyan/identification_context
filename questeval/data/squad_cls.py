@@ -83,7 +83,7 @@ class SQuADCLSDataset(datasets.GeneratorBasedBuilder):
             {
                 "sentence1": datasets.Value("string"),
                 "sentence2": datasets.Value("string"), 
-                "label": datasets.Value("int32"),
+                "label": datasets.Value("float32"),
                 # These are the features of your dataset like images, labels ...
             }
         )
@@ -138,7 +138,7 @@ class SQuADCLSDataset(datasets.GeneratorBasedBuilder):
         import json
         with open(filepath, encoding="utf-8") as f:
             data = json.load(f)
-        dataset = data['data'][:int(0.2*len(data['data']))]
+        dataset = data['data'][:int(0.02*len(data['data']))]
         key = 0
         for d in dataset:
             
