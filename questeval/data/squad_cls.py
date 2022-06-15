@@ -138,7 +138,8 @@ class SQuADCLSDataset(datasets.GeneratorBasedBuilder):
         import json
         with open(filepath, encoding="utf-8") as f:
             data = json.load(f)
-        dataset = data['data'][:int(0.02*len(data['data']))]
+        # bert classification 0.05
+        dataset = data['data'][:int(0.05*len(data['data']))]
         key = 0
         for d in dataset:
             

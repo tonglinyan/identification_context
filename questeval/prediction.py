@@ -35,7 +35,7 @@ __version__ = "0.2.4"
 
 def parse_args():
     parser = argparse.ArgumentParser('Evaluation script for each model in questeval.')
-    parser.add_argument('--task', choices=['QA_D2T', 'QG_D2T', 'QA_T2T', 'QG_T2T', 'IC'], help='prediction of question answering, question generation or identification of context')
+    parser.add_argument('--task', choices=['QA_D2T', 'QG_D2T', 'QA_T2T', 'QG_T2T', 'BERT_Classification', 'BERT_Ranking'], help='prediction of question answering, question generation or identification of context')
     parser.add_argument('--author', choices=['hf', 'trained'], default='hf')
     parser.add_argument('--dataset', choices=['squad', 'sqa', 'wtq', 'webnlg'], help='datasets', default = 'squad')
     parser.add_argument('--verbose', '-v', action='store_true')
@@ -57,7 +57,6 @@ class Evaluation:
         no_cuda: bool = False,
     ) -> None:
 
-        
         self.task = args.task
         self.author = args.author
         self.dataset = args.dataset
@@ -70,7 +69,7 @@ class Evaluation:
 
         self.T2T_DATASETS = ['squad']
         self.D2T_DATASETS = ['sqa', 'wtq', 'webnlg']
-        self.IC_DATASETS = ['squad']
+        self.BERT_DATASETS = ['squad']
         
         if 'T2T' in self.task and self.dataset not in self.T2T_DATASETS:
             raise (
@@ -82,33 +81,24 @@ class Evaluation:
                 f'Dataset {self.dataset} is not available for model {self.task}. The list of available question-answering datasets are: {self.D2T_DATASETS}.'
             )
 
-        if 'IC' == self.task and self.dataset not in self.IC_DATASETS:
+        if 'BERT' in self.task and self.dataset not in self.BERT_DATASETS:
             raise (
-                f'Dataset {self.dataset} is not available for model {self.task}. The list of available question-answering datasets are: {self.IC_DATASETS}.'
+                f'Dataset {self.dataset} is not available for model {self.task}. The list of available question-answering datasets are: {self.BERT_DATASETS}.'
             )
-        
+
         self._load_all_models()
         self._load_dataset()
         preds = self._prediction()
+
+        with open(f'prediction_{self.task}.json', 'w') as f:
+            data = {'class': preds}
+            json.dump(data, f, indent=4)          
+        
+        self._save_json(preds)
         """
         with open(f'{self.task}_{self.dataset}_{self.author}.json', 'r') as f:
-            data = json.load(f)
-        data = list(filter(None, data))
-        for log in data:
-            log['context'] = list(filter(None, log['context']))
-            log['prediction'] = list(filter(None, log['prediction']))
-        with open(f'{self.task}_{self.dataset}_{self.author}.json', 'w') as f:
-            json.dump(data, f, indent=4)
-        """
-        self._save_json(preds)
-        
-        """
-        #with open(f'{self.task}_{author}.json', 'r') as f:
-        #    data = json.load(f)
-
-        #self.answer = [d['answer'] for d in data]
-        #self.question = [d['question'] for d in data]
-        #preds = [d['prediction'] for d in data]
+            self.data = json.load(f)
+        preds = None
         """
         print(self._evaluation(preds))
 
@@ -135,8 +125,8 @@ class Evaluation:
                 self.model = self.get_model(model_name=f'/home/tonglin.yan/identification_context/questeval/t5_qg_{self.dataset}_en')
             if self.task == 'QG_T2T':
                 self.model = self.get_model(model_name='/home/tonglin.yan/identification_context/questeval/t5_qg_squad1_en')
-            if self.task == 'IC':
-                self.model = self.get_model(model_name='/home/tonglin.yan/identification_context/questeval/qa_inverse_squad')
+            if 'BERT' in self.task:
+                self.model = self.get_model(model_name=f'/home/tonglin.yan/identification_context/questeval/{self.task.lower()}')
 
     def _load_dataset(self):
         if 'T2T' in self.task:
@@ -152,7 +142,7 @@ class Evaluation:
             )
             test_set = raw_datasets['test']
             self.text, self.question, self.answer = test_set['context'], test_set['question'], test_set['answer']
-        if self.task == 'IC':
+        if 'BERT' in self.task:
             raw_datasets = load_dataset(
                 'data/squad_cls.py',
                 data_files={"validation":"dev-v1.1.json"},
@@ -235,26 +225,40 @@ class Evaluation:
         preds: List
     ):
         data = []
-        if self.task == 'IC':
-            qa_pair, log = None, None
-            for s1, s2, l, p in zip(self.sentence1, self.sentence2, self.label, preds):
-                if s1 == qa_pair:
-                    log['context'].append(s2 if l == 1 else None)
-                    log['prediction'].append(s2 if p == 1 else None)
-                else:
-                    log['context'] = list(filter(None, log['context']))
-                    log['prediction'] = list(filter(None, log['prediction']))
-                    data.append(log)
-                    log = {'question-answer:': s1, 'context': [s2 if l == 1 else None], 'prediction': [s2 if p == 1 else None]}
-                    qa_pair = s1
-            data = list(filter(None, data))
+        if self.task == 'BERT_Classification':
+                qa_pair, log = None, None
+                for s1, s2, l, p in zip(self.sentence1, self.sentence2, self.label, preds):
+                    if s1 != qa_pair:
+                        data.append(log)
+                        log = {'question-answer:': s1, 'context': [], 'prediction': []}
+                        qa_pair = s1
+                    if l == 1:
+                        log['context'].append(s2)
+                    if p == 1:
+                        log['prediction'].append(s2)
+                self.data = list(filter(None, data))
+            
+        elif self.task == 'BERT_Ranking':
+                qa_pair, log = None, None
+                for s1, s2, p in zip(self.sentence1, self.sentence2, preds):
+                    if s1 == qa_pair:
+                        dict_text = {'text':s2, 'score': p}
+                        log['context'].append(dict_text)
+                    else:
+                        data.append(log)
+                        dict_text = {'text':s2, 'score': p}
+                        log = {'question-answer:': s1, 'context': [dict_text]}
+                        qa_pair = s1
+                self.data = list(filter(None, data))
         else:
             for c, q, a, p in zip(self.text, self.question, self.answer, preds):
                 log = {"table": c, "question": q, "answer": a, "prediction": p}        
                 data.append(log)
+            self.data = data
 
         with open(f'{self.task}_{self.dataset}_{self.author}.json', 'w') as f:
-            json.dump(data, f, indent=4)
+            json.dump(self.data, f, indent=4)        
+
 
     def _prediction(
         self,
@@ -281,15 +285,40 @@ class Evaluation:
                 assert len(pred) == len(to_do_exs)
                 preds += pred
         
-        if self.task == 'IC':
+        if 'BERT' in self.task:
+            binary = self.task =='BERT_Classification'
             preds = []
-            self.label = self.label[:int(0.3*len(self.label))]
+            #self.label = self.label[:int(0.06*len(self.label))]
             for idx in tqdm(range(0, len(self.label), batch_size)):
-                pred = self.model.predict(self.sentence1[idx:idx+batch_size], self.sentence2[idx:idx+batch_size])
+                pred = self.model.predict(self.sentence1[idx:idx+batch_size], self.sentence2[idx:idx+batch_size], binary)
                 preds += pred
-            
             assert len(preds) == len(self.label)
         return preds
+
+
+    def _predict_questions(
+        self,
+        to_do_exs: List[tuple]
+    ) -> List[str]:
+        str_prefix = f'{self.qg_prefix} {self.sep} ' if self.qg_prefix is not None else ''
+        formated_inputs = [f'{str_prefix}{asw} {self.sep} {context}' for asw, context in to_do_exs]
+        _, question_texts = self.model.predict(formated_inputs)
+
+        return question_texts
+
+    
+    def _predict_answers(
+        self,
+        to_do_exs: List[tuple]
+    ) -> Tuple[List[float], List[str]]:
+        if self.author == 'hf':
+            formated_inputs = [f'{question} {self.sep} {context}' for question, context in to_do_exs]
+        else:
+            formated_inputs = [f'question:{question}context:{context}' for question, context in to_do_exs]
+        qa_scores, qa_texts = self.model.predict(formated_inputs)
+
+        return qa_scores, qa_texts
+
 
     def _evaluation(
         self, 
@@ -341,31 +370,13 @@ class Evaluation:
             ])
 
         else:
-            return sum([1 if p==l else 0 for p, l in zip(preds, self.label)])/len(preds)
+            #if self.binary:
+            accuracy = sum([1 if l == p else 0 for l, p in zip(self.label, preds)])/len(self.label)
+            precision = sum([1 if log['context']==log['prediction'] else 0 for log in self.data])/len(self.data)
+            return collections.OrderedDict([
+                ('accuracy', 100.0 * accuracy),
+                ('precision', 100 * precision)])
 
-
-    def _predict_questions(
-        self,
-        to_do_exs: List[tuple]
-    ) -> List[str]:
-        str_prefix = f'{self.qg_prefix} {self.sep} ' if self.qg_prefix is not None else ''
-        formated_inputs = [f'{str_prefix}{asw} {self.sep} {context}' for asw, context in to_do_exs]
-        _, question_texts = self.model.predict(formated_inputs)
-
-        return question_texts
-
-    
-    def _predict_answers(
-        self,
-        to_do_exs: List[tuple]
-    ) -> Tuple[List[float], List[str]]:
-        if self.author == 'hf':
-            formated_inputs = [f'{question} {self.sep} {context}' for question, context in to_do_exs]
-        else:
-            formated_inputs = [f'question:{question}context:{context}' for question, context in to_do_exs]
-        qa_scores, qa_texts = self.model.predict(formated_inputs)
-
-        return qa_scores, qa_texts
         
 
     def get_model(self, model_name: str):
@@ -377,7 +388,7 @@ class Evaluation:
         # batch size
         model_batch_size = self.qg_batch_size if 'qg' in model_name.lower() else self.clf_batch_size
 
-        if self.task == 'IC':
+        if 'BERT' in self.task:
             model = API_BERT(
                 pretrained_model_name_or_path=model_name,
                 keep_score_idx=keep_score_idx,

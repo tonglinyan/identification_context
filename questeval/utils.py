@@ -261,15 +261,16 @@ class API_BERT:
 
         self.keep_score_idx = keep_score_idx
 
-        #if device == "cuda":
-        #    self.model.cuda()
+        if device == "cuda":
+            self.model.cuda()
         self.max_source_length = max_source_length
         self.model_batch_size = model_batch_size
 
     def predict(
         self,
         st1,
-        st2 
+        st2, 
+        binary = True
     ):
 
         args = ((st1, st2))
@@ -284,9 +285,11 @@ class API_BERT:
         )
     
         with torch.no_grad():
-            logits = self.model(**inputs)['logits']
-            preds = np.argmax(logits, axis=-1).tolist()
-            
+            logits = self.model(**inputs.to(self.model.device))['logits']
+            if binary:
+                preds = np.argmax(logits.to('cpu'), axis=-1).tolist()
+            else:
+                return logits.tolist()
         return preds
 
 
