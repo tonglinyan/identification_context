@@ -373,7 +373,6 @@ def main():
             # https://huggingface.co/docs/datasets/package_reference/main_classes.html#datasets.Dataset.unique
             label_list = raw_datasets["train"].unique("label")
             label_list.sort()  # Let's sort it for determinism
-            #num_labels = label_list[-1]
             num_labels = len(label_list)
 
     # Load pretrained model and tokenizer

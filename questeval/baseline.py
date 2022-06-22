@@ -1,0 +1,77 @@
+import numpy as np
+from tqdm import tqdm
+import sys
+import argparse
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfTransformer
+import json
+import collections
+
+def parse_args():
+    parser = argparse.ArgumentParser('Evaluation script for each model in questeval.')
+    parser.add_argument('--dataset', help='datasets', default = 'rotowire')
+    parser.add_argument('--verbose', '-v', action='store_true')
+    #parser.add_argument('--save_table', choices=[True, False], default=False)
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(1)
+    return parser.parse_args()
+
+args = parse_args()
+
+
+def _load_dataset(args):
+    with open(args.dataset, 'r') as f:
+        data = json.load(f)  
+    data = data['data']
+    logs = []
+    for passage in data:
+        context = [p['context'] for p in passage['paragraphs']]
+        log = {'passage': context, 'qa':[]}
+        for p in passage['paragraphs']:
+            for qa in p['qas']:
+                qa_log = {'answer': ', '.join(list(set([a['text'] for a in qa['answers']]))) if len(qa['answers']) > 0 else '', 'question': qa['question'], 'context': p['context']}
+                log['qa'].append(qa_log)
+        logs.append(log)
+
+    return logs
+
+def _tfidf(corpus):
+    vectorizer = CountVectorizer()
+    X = vectorizer.fit_transform(corpus)
+
+    transformer = TfidfTransformer()
+    tfidf = transformer.fit_transform(X)
+    return tfidf.toarray()
+
+
+def cos_similarity(tfidf_Q, tfidf_D):
+    sim = []
+    for tfd in tfidf_D:
+        numerator = sum([a*b for a, b in zip(tfidf_Q, tfd)])
+        denomitor = (sum([a*a for a in tfidf_Q])*sum([a*a for a in tfd])) ** 2
+        sim.append(numerator/denomitor)
+
+    return sim
+
+logs = _load_dataset(args)
+for log in tqdm(logs):
+    for qa_pair in tqdm(log['qa']):
+
+        tfidf = _tfidf(['%s. %s'%(qa_pair['answer'], qa_pair['question'])]+log['passage'])
+        sim = cos_similarity(tfidf[0], tfidf[1:])
+        qa_pair['score'] = sim
+        qa_pair['context_predicted'] = log['passage'][np.argmax(sim)]
+
+
+with open('ranking_baseline.json', 'w') as f:
+    json.dump(logs, f, indent=4)  
+#with open('ranking_baseline.json', 'r') as f:
+#    logs = json.load(f)  
+
+def evaluation(logs):
+    
+    precision = sum([1 if qa['context']==qa['context_predicted'] else 0 for log in logs for qa in log['qa'] ])/len([1 for log in logs for qa in log['qa']])
+    return collections.OrderedDict([('precision', 100 * precision)])
+
+print(evaluation(logs))

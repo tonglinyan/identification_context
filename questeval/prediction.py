@@ -5,7 +5,7 @@ import os
 import unidecode
 #from sklearn.naive_bayes import BernoulliNB
 import json
-#import numpy as np
+import numpy as np
 #import logging
 from datasets import load_dataset, load_metric
 #import spacy
@@ -226,30 +226,32 @@ class Evaluation:
     ):
         data = []
         if self.task == 'BERT_Classification':
-                qa_pair, log = None, None
-                for s1, s2, l, p in zip(self.sentence1, self.sentence2, self.label, preds):
-                    if s1 != qa_pair:
-                        data.append(log)
-                        log = {'question-answer:': s1, 'context': [], 'prediction': []}
-                        qa_pair = s1
-                    if l == 1:
-                        log['context'].append(s2)
-                    if p == 1:
-                        log['prediction'].append(s2)
-                self.data = list(filter(None, data))
+            qa_pair, log = None, None
+            for s1, s2, l, p in zip(self.sentence1, self.sentence2, self.label, preds):
+                if s1 != qa_pair:
+                    data.append(log)
+                    log = {'question-answer:': s1, 'context': [], 'prediction': []}
+                    qa_pair = s1
+                if l == 1:
+                    log['context'].append(s2)
+                if p == 1:
+                    log['prediction'].append(s2)
+            self.data = list(filter(None, data))
             
         elif self.task == 'BERT_Ranking':
-                qa_pair, log = None, None
-                for s1, s2, p in zip(self.sentence1, self.sentence2, preds):
-                    if s1 == qa_pair:
-                        dict_text = {'text':s2, 'score': p}
-                        log['context'].append(dict_text)
-                    else:
-                        data.append(log)
-                        dict_text = {'text':s2, 'score': p}
-                        log = {'question-answer:': s1, 'context': [dict_text]}
-                        qa_pair = s1
-                self.data = list(filter(None, data))
+            qa_pair, log = None, None
+            for s1, s2, p, l in zip(self.sentence1, self.sentence2, preds, self.label):
+                if s1 != qa_pair:
+                    data.append(log)
+                    log = {'question-answer:': s1, 'context_predicted': [s2], 'score':[p]}
+                    qa_pair = s1
+                else:
+                    log['context_predicted'].append(s2)
+                    log['score'].append(p)
+                if l == 1:
+                    log['context'] = s2
+            self.data = list(filter(None, data))
+
         else:
             for c, q, a, p in zip(self.text, self.question, self.answer, preds):
                 log = {"table": c, "question": q, "answer": a, "prediction": p}        
@@ -369,13 +371,19 @@ class Evaluation:
                 ('total', total),
             ])
 
-        else:
+        elif 'classification' in self.task.lower():
             #if self.binary:
             accuracy = sum([1 if l == p else 0 for l, p in zip(self.label, preds)])/len(self.label)
             precision = sum([1 if log['context']==log['prediction'] else 0 for log in self.data])/len(self.data)
             return collections.OrderedDict([
                 ('accuracy', 100.0 * accuracy),
                 ('precision', 100 * precision)])
+
+        else:
+            precision = sum([[int(log['context_predicted'](np.argmax(log['score']))==log['context']) for log in self.data]])/len(self.data)
+            return collections.OrderedDict([
+                ('precision', 100 * precision)])
+
 
         
 

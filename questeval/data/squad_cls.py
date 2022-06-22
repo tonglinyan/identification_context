@@ -83,7 +83,7 @@ class SQuADCLSDataset(datasets.GeneratorBasedBuilder):
             {
                 "sentence1": datasets.Value("string"),
                 "sentence2": datasets.Value("string"), 
-                "label": datasets.Value("float32"),
+                "label": datasets.Value("int32"),
                 # These are the features of your dataset like images, labels ...
             }
         )
@@ -152,7 +152,7 @@ class SQuADCLSDataset(datasets.GeneratorBasedBuilder):
                 for qa_pair in p['qas']:        
                     q = qa_pair['question']
                     answers = qa_pair['answers']
-                    answer = ', '.join([a['text'] for a in answers]) if len(answers) > 0 else " " 
+                    answer = ', '.join(list(set([a['text'] for a in answers]))) if len(answers) > 0 else " " 
                     s1 = f'question: {q} answer: {answer}'
                     
                     for c in corpus:
