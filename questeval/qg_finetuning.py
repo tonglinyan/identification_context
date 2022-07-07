@@ -442,8 +442,19 @@ def main():
         position = examples["position"]
         all_questions = examples[question_column]
         all_headers = examples[context_column]
-        all_answers = [', '.join(a) for a in examples[answer_column]]
         all_tables = examples["table_data"]
+        all_answers = [', '.join(a) for a in examples[answer_column]]
+
+        def answer_generation(coor, table, header):
+            row_ind = [c['row_index'] for c in coor]
+            col_ind = [c['column_index'] for c in coor]
+
+            asws = []
+            for t, h, rows, cols in zip(table, header, row_ind, col_ind):
+                asws.append(', '.join([f'{h[c]}[{t[r][c]}]' for (r, c) in zip(rows, cols)]))
+            return asws
+        all_answer_idx = examples['answer_coordinates']
+        all_answers = answer_generation(all_answer_idx, all_tables, all_headers)
         
         #questions, headers, answers, tables = all_questions, all_headers, all_answers, all_tables
         questions, headers, answers, tables = [], [], [], []

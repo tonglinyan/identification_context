@@ -286,6 +286,7 @@ class API_BERT:
     
         with torch.no_grad():
             logits = self.model(**inputs.to(self.model.device))['logits']
+
             if binary:
                 preds = np.argmax(logits.to('cpu'), axis=-1).tolist()
             else:

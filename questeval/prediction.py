@@ -5,7 +5,7 @@ import os
 import unidecode
 #from sklearn.naive_bayes import BernoulliNB
 import json
-#import numpy as np
+import numpy as np
 #import logging
 from datasets import load_dataset, load_metric
 #import spacy
@@ -35,7 +35,7 @@ __version__ = "0.2.4"
 
 def parse_args():
     parser = argparse.ArgumentParser('Evaluation script for each model in questeval.')
-    parser.add_argument('--task', choices=['QA_D2T', 'QG_D2T', 'QA_T2T', 'QG_T2T', 'BERT_Classification', 'BERT_Ranking'], help='prediction of question answering, question generation or identification of context')
+    parser.add_argument('--task', choices=['QA_D2T', 'QG_D2T', 'QA_T2T', 'QG_T2T', 'BERT_Classification', 'BERT_Ranking', 'BERT_Ranking_non_msmarco'], help='prediction of question answering, question generation or identification of context')
     parser.add_argument('--author', choices=['hf', 'trained'], default='hf')
     parser.add_argument('--dataset', choices=['squad', 'sqa', 'wtq', 'webnlg'], help='datasets', default = 'squad')
     parser.add_argument('--verbose', '-v', action='store_true')
@@ -87,6 +87,7 @@ class Evaluation:
             )
 
         self._load_all_models()
+
         self._load_dataset()
         preds = self._prediction()
 
@@ -99,7 +100,8 @@ class Evaluation:
         with open(f'{self.task}_{self.dataset}_{self.author}.json', 'r') as f:
             self.data = json.load(f)
         preds = None
-        """
+        """  
+      
         print(self._evaluation(preds))
 
 
@@ -122,11 +124,11 @@ class Evaluation:
             if self.task == 'QA_T2T':
                 self.model = self.get_model(model_name='/home/tonglin.yan/identification_context/questeval/t5_qa_squad2neg_en')
             if self.task == 'QG_D2T':
-                self.model = self.get_model(model_name=f'/home/tonglin.yan/identification_context/questeval/t5_qg_{self.dataset}_en')
+                self.model = self.get_model(model_name=f'/home/tonglin.yan/identification_context/questeval/t5_qg_{self.dataset}_key_en')
             if self.task == 'QG_T2T':
                 self.model = self.get_model(model_name='/home/tonglin.yan/identification_context/questeval/t5_qg_squad1_en')
             if 'BERT' in self.task:
-                self.model = self.get_model(model_name=f'/home/tonglin.yan/identification_context/questeval/{self.task.lower()}')
+                self.model = self.get_model(model_name=f'/home/tonglin.yan/identification_context/questeval/bert_ranking_cel')#{self.task.lower()}')
 
     def _load_dataset(self):
         if 'T2T' in self.task:
@@ -167,6 +169,17 @@ class Evaluation:
         all_headers = dataset['table_header']
         all_tables = dataset["table_data"]
         all_ids = dataset['id']
+
+        def answer_generation(coor, table, header):
+            row_ind = [c['row_index'] for c in coor]
+            col_ind = [c['column_index'] for c in coor]
+
+            asws = []
+            for t, h, rows, cols in zip(table, header, row_ind, col_ind):
+                asws.append(', '.join([f'{h[c]}[{t[r][c]}]' for (r, c) in zip(rows, cols)]))
+            return asws
+        all_answer_idx = dataset['answer_coordinates']
+        all_answers = answer_generation(all_answer_idx, all_tables, all_headers)
         
         #questions, headers, answers, tables = all_questions, all_headers, all_answers, all_tables
         questions, headers, answers, tables, ids = [], [], [], [], []
@@ -226,30 +239,32 @@ class Evaluation:
     ):
         data = []
         if self.task == 'BERT_Classification':
-                qa_pair, log = None, None
-                for s1, s2, l, p in zip(self.sentence1, self.sentence2, self.label, preds):
-                    if s1 != qa_pair:
-                        data.append(log)
-                        log = {'question-answer:': s1, 'context': [], 'prediction': []}
-                        qa_pair = s1
-                    if l == 1:
-                        log['context'].append(s2)
-                    if p == 1:
-                        log['prediction'].append(s2)
-                self.data = list(filter(None, data))
+            qa_pair, log = None, None
+            for s1, s2, l, p in zip(self.sentence1, self.sentence2, self.label, preds):
+                if s1 != qa_pair:
+                    data.append(log)
+                    log = {'question-answer:': s1, 'context': [], 'prediction': []}
+                    qa_pair = s1
+                if l == 1:
+                    log['context'].append(s2)
+                if p == 1:
+                    log['prediction'].append(s2)
+            self.data = list(filter(None, data))
             
-        elif self.task == 'BERT_Ranking':
-                qa_pair, log = None, None
-                for s1, s2, p in zip(self.sentence1, self.sentence2, preds):
-                    if s1 == qa_pair:
-                        dict_text = {'text':s2, 'score': p}
-                        log['context'].append(dict_text)
-                    else:
-                        data.append(log)
-                        dict_text = {'text':s2, 'score': p}
-                        log = {'question-answer:': s1, 'context': [dict_text]}
-                        qa_pair = s1
-                self.data = list(filter(None, data))
+        elif 'Ranking' in self.task:
+            qa_pair, log = None, None
+            for s1, s2, p, l in zip(self.sentence1, self.sentence2, preds, self.label):
+                if s1 != qa_pair:
+                    data.append(log)
+                    log = {'question-answer:': s1, 'context_predicted': [s2], 'score':[p[0]]}
+                    qa_pair = s1
+                else:
+                    log['context_predicted'].append(s2)
+                    log['score'].append(p[0])
+                if l == 1:
+                    log['context'] = s2
+            self.data = list(filter(None, data))
+
         else:
             for c, q, a, p in zip(self.text, self.question, self.answer, preds):
                 log = {"table": c, "question": q, "answer": a, "prediction": p}        
@@ -286,7 +301,7 @@ class Evaluation:
                 preds += pred
         
         if 'BERT' in self.task:
-            binary = self.task =='BERT_Classification'
+            binary = (self.task =='BERT_Classification')
             preds = []
             #self.label = self.label[:int(0.06*len(self.label))]
             for idx in tqdm(range(0, len(self.label), batch_size)):
@@ -369,13 +384,38 @@ class Evaluation:
                 ('total', total),
             ])
 
-        else:
+        elif 'classification' in self.task.lower():
             #if self.binary:
             accuracy = sum([1 if l == p else 0 for l, p in zip(self.label, preds)])/len(self.label)
             precision = sum([1 if log['context']==log['prediction'] else 0 for log in self.data])/len(self.data)
             return collections.OrderedDict([
                 ('accuracy', 100.0 * accuracy),
                 ('precision', 100 * precision)])
+
+        else:
+            def top_k_map(N, logs):
+                ap = []
+                for log in logs:
+                    score = log['score']
+                    label_ind = log['context_predicted'].index(log['context'])
+
+                    sorted_id = sorted(range(len(score)), key=lambda k: score[k], reverse=True)
+                    prec = 0
+                    for i in range(N):
+                        if sorted_id[i] == label_ind:
+                            prec = 1/(i+1)
+                    ap.append(prec) 
+
+                return sum(ap)/len(logs)
+
+
+
+            precision = sum([int(log['context_predicted'][np.argmax(log['score'])]==log['context']) for log in self.data])/len(self.data)
+
+            return collections.OrderedDict([
+                ('precision', 100 * precision), 
+                ('mAP', 100*top_k_map(3, self.data))])
+
 
         
 

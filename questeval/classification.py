@@ -373,7 +373,6 @@ def main():
             # https://huggingface.co/docs/datasets/package_reference/main_classes.html#datasets.Dataset.unique
             label_list = raw_datasets["train"].unique("label")
             label_list.sort()  # Let's sort it for determinism
-            #num_labels = label_list[-1]
             num_labels = len(label_list)
 
     # Load pretrained model and tokenizer
@@ -558,6 +557,7 @@ def main():
         elif last_checkpoint is not None:
             checkpoint = last_checkpoint
         train_result = trainer.train(resume_from_checkpoint=checkpoint)
+
         metrics = train_result.metrics
         max_train_samples = (
             data_args.max_train_samples if data_args.max_train_samples is not None else len(train_dataset)
