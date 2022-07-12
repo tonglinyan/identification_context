@@ -22,6 +22,7 @@ import random
 from pathlib import Path
 from torch.nn.functional import cross_entropy
 from transformers import AdamW
+import torch.nn as nn
 
 import datasets
 import torch
@@ -43,6 +44,7 @@ from transformers import (
     SchedulerType,
     default_data_collator,
     get_scheduler,
+    PreTrainedModel, 
 )
 from transformers.utils import get_full_repo_name
 from transformers.utils.versions import require_version
@@ -208,6 +210,28 @@ def parse_args():
     return args
 
 
+class BERT_Ranking(PreTrainedModel):
+
+    def __init__(self, config, args):
+        super(BERT_Ranking, self).__init__(config)
+        self.config = config
+        self.model = AutoModelForSequenceClassification.from_pretrained(
+            args.model_name_or_path,
+            from_tf=bool(".ckpt" in args.model_name_or_path),
+            config=config,
+            ignore_mismatched_sizes=args.ignore_mismatched_sizes,
+        )
+        self.softmax = torch.nn.Softmax(dim=1)
+        
+    
+    def forward(self, input_ids, attention_mask):
+        outputs = self.model(input_ids=input_ids, attention_mask=attention_mask)
+        out = self.softmax(outputs.logits)
+
+        return out
+    
+
+
 def main():
     args = parse_args()
 
@@ -330,12 +354,7 @@ def main():
     # download model & vocab.
     config = AutoConfig.from_pretrained(args.model_name_or_path, num_labels=num_labels, finetuning_task=args.task_name)
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path, use_fast=not args.use_slow_tokenizer)
-    model = AutoModelForSequenceClassification.from_pretrained(
-        args.model_name_or_path,
-        from_tf=bool(".ckpt" in args.model_name_or_path),
-        config=config,
-        ignore_mismatched_sizes=args.ignore_mismatched_sizes,
-    )
+    model = BERT_Ranking(config, args)
 
     # Preprocessing the datasets
     if args.task_name is not None:
@@ -532,27 +551,6 @@ def main():
 
     for epoch in range(starting_epoch, args.num_train_epochs):
         """ 
-        optimizer = AdamW(model.parameters(), lr=1e-5, eps=1e-8)
-        for step, batch in enumerate(train_dataloader):
-            optimizer.zero_grad()
-
-            pos_text = "{} [SEP] {}".format(query, pos_doc) # query, pos_doc and neg_doc can be 
-            neg_text = "{} [SEP] {}".format(query, neg_doc) # retrieved from the training triples
-
-            pos_encoded = tokenizer.encode_plus(pos_text, return_tensors="pt")
-            neg_encoded = tokenizer.encode_plus(neg_text, return_tensors="pt")
-
-            pos_output = model.forward(**pos_encoded).squeeze(1)
-            neg_output = model.forward(**neg_encoded).squeeze(1)
-
-            labels = torch.zeros(1, dtype=torch.long)
-
-            loss = cross_entropy(torch.stack((pos_output, neg_output), dim=1), labels)
-
-            loss.backward()
-            optimizer.step()
-
-
         model.train()
         if args.with_tracking:
             total_loss = 0
@@ -590,19 +588,24 @@ def main():
         model.train()
         if args.with_tracking:
             total_loss = 0
-        
+
         for step, batch in enumerate(train_dataloader):
             # We need to skip steps until we reach the resumed step
             if args.resume_from_checkpoint and epoch == starting_epoch:
                 if resume_step is not None and step < resume_step:
                     completed_steps += 1
                     continue         
-            outputs = model.forward(**batch)
+            outputs = model.forward(batch.input_ids, batch.attention_mask)
 
-            def _loss_function(outputs, label):              
-                return sum([-torch.log(out) if int(l) == 1 else -torch.log(1-out) for (out, l) in zip(outputs, label)])
+            def _loss_function(outputs, label):   
+                print("loss calculé")
+                print(label)
+                print([-torch.log((out+1)/2) if int(l) == 1 else -torch.log(1-(out+1)/2) for (out, l) in zip(outputs, label)])        
+                return sum([-torch.log((out+1)/2) if int(l) == 1 else -torch.log(1-(out+1)/2) for (out, l) in zip(outputs, label)])
 
-            loss = _loss_function(outputs.logits.squeeze(), batch['labels'])
+            #loss = _loss_function(outputs, batch['labels'])
+            loss = cross_entropy(outputs, batch['labels'])
+
             if args.with_tracking:
                 total_loss += loss.detach().float()
             accelerator.backward(loss)
@@ -620,16 +623,19 @@ def main():
                     if args.output_dir is not None:
                         output_dir = os.path.join(args.output_dir, output_dir)
                     accelerator.save_state(output_dir)
+                    logger.info("step: ", step, " loss: ", total_loss)
 
             if completed_steps >= args.max_train_steps:
                 break
-            
+        
         model.eval()
         samples_seen = 0
         for step, batch in enumerate(eval_dataloader):
             with torch.no_grad():
-                outputs = model(**batch)
-            predictions = outputs.logits.argmax(dim=-1) if not is_regression else outputs.logits.squeeze()
+                output = model(batch.input_ids, batch.attention_mask)
+
+            predictions = output.argmax(dim=-1) 
+            #predictions = outputs.logits.argmax(dim=-1) if not is_regression else outputs.logits.squeeze()
             predictions, references = accelerator.gather((predictions, batch["labels"]))
             # If we are in a multiprocess environment, the last batch has duplicates
             if accelerator.num_processes > 1:
@@ -638,10 +644,11 @@ def main():
                     references = references[: len(eval_dataloader.dataset) - samples_seen]
                 else:
                     samples_seen += references.shape[0]
-            metric.add_batch(
-                predictions=predictions,
-                references=references,
-            )
+
+        metric.add_batch(
+            predictions=predictions,
+            references=references,
+        )
 
         eval_metric = metric.compute()
         logger.info(f"epoch {epoch}: {eval_metric}")
@@ -710,6 +717,27 @@ def main():
         with open(os.path.join(args.output_dir, "all_results.json"), "w") as f:
             json.dump({"eval_accuracy": eval_metric["accuracy"]}, f)
 
+
+    """
+    model = MyModel(num_classes).to(device)
+    optimizer = AdamW(model.parameters(), lr=2e-5, weight_decay=1e-2)
+    output_model = './models/model_xlnet_mid.pth'
+
+    # save
+    def save(model, optimizer):
+        # save
+        torch.save({
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict()
+        }, output_model)
+
+    save(model, optimizer)
+
+    # load
+    checkpoint = torch.load(output_model, map_location='cpu')
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    """
 
 if __name__ == "__main__":
     main()

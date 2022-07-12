@@ -116,7 +116,7 @@ def get_tokens(s):
         if not s: return []
         return normalize_answer(s).split()
 
-
+"""
 # extract answer from: text [answer] text
 def extract_table_answers(
     text: str
@@ -134,7 +134,29 @@ def extract_table_answers(
             asw_toks.append(tok)
 
     return asws
+"""
 
+def extract_table_answers(
+    text: str
+) -> List[str]:
+
+    asws = []
+
+    asw_toks = []
+    is_asw = False
+    for tok in text.split():
+
+        if tok == ']':
+            asws.append(' '.join(asw_toks))
+            is_asw = False
+            asw_toks = []
+
+        if is_asw:
+            asw_toks.append(tok)
+
+        if tok == '[':
+            is_asw = True
+    return asws
 
 class API_T2T:
     def __init__(

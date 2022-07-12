@@ -128,7 +128,7 @@ class Evaluation:
             if self.task == 'QG_T2T':
                 self.model = self.get_model(model_name='/home/tonglin.yan/identification_context/questeval/t5_qg_squad1_en')
             if 'BERT' in self.task:
-                self.model = self.get_model(model_name=f'/home/tonglin.yan/identification_context/questeval/bert_ranking_cel')#{self.task.lower()}')
+                self.model = self.get_model(model_name=f'/home/tonglin.yan/identification_context/questeval/bert_cls2')#{self.task.lower()}')
 
     def _load_dataset(self):
         if 'T2T' in self.task:

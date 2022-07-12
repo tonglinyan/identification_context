@@ -83,7 +83,7 @@ class SQuADCLSDataset(datasets.GeneratorBasedBuilder):
             {
                 "sentence1": datasets.Value("string"),
                 "sentence2": datasets.Value("string"), 
-                "label": datasets.Value("float32"),
+                "label": datasets.Value("int32"),
                 # These are the features of your dataset like images, labels ...
             }
         )
@@ -139,15 +139,17 @@ class SQuADCLSDataset(datasets.GeneratorBasedBuilder):
         with open(filepath, encoding="utf-8") as f:
             data = json.load(f)
         # bert classification 0.05
-        dataset = data['data'][:int(0.05*len(data['data']))]
+        dataset = data['data'][:int(0.5*len(data['data']))]
         key = 0
         for d in dataset:
             
             paras = d['paragraphs']
 
             corpus, s1 = [], []
+
             for p in paras:
                 corpus.append(p['context'])
+
             for p in paras:           
                 for qa_pair in p['qas']:        
                     q = qa_pair['question']
@@ -155,7 +157,15 @@ class SQuADCLSDataset(datasets.GeneratorBasedBuilder):
                     answer = ', '.join(list(set([a['text'] for a in answers]))) if len(answers) > 0 else " " 
                     s1 = f'question: {q} answer: {answer}'
                     
-                    for c in corpus:
+                    import random
+                    if len(corpus) > 10:
+                        corpus_selected = random.sample(corpus, 10)
+                    else:
+                        corpus_selected = corpus
+                    if p['context'] not in corpus_selected:
+                        corpus_selected.append(p['context'])
+                        
+                    for c in corpus_selected:
                         yield key, {
                             'sentence1': s1,
                             'sentence2': c,

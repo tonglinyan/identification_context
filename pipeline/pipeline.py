@@ -57,30 +57,28 @@ class data2text:
         self.spacy_pipeline = spacy.load('en_core_web_sm')
         self.device = 'cuda' if (torch.cuda.is_available() and not no_cuda) else 'cpu'
 
-        self._load_all_models()
-        
+        self._load_all_models() 
+        """
         self._load_dataset()
-        """
-        with open(f'prediction_score_{self.dataset}.json', 'r') as f:
-            self.logs = json.load(f)  
-        """
+       
         with open(f'prediction_score_{self.dataset}.json', 'w') as f:
             json.dump(self.logs, f, indent=4)  
+        
         self._compute_answer_selection(self.logs)
         with open(f'prediction_score_{self.dataset}.json', 'w') as f:
             json.dump(self.logs, f, indent=4)  
+        
         self._compute_question_generation(self.logs)
         with open(f'prediction_score_{self.dataset}.json', 'w') as f:
             json.dump(self.logs, f, indent=4)  
-
         """
         with open(f'prediction_score_{self.dataset}.json', 'r') as f:
             self.logs = json.load(f)  
-        """
+
         self._compute_context_selection(self.logs)
         with open(f'prediction_score_{self.dataset}.json', 'w') as f:
             json.dump(self.logs, f, indent=4)   
-
+            
         #self._save_json(preds)
         print(self._evaluation(self.logs))
 
@@ -98,9 +96,9 @@ class data2text:
 
     def _load_all_models(self):
     
-        self.qg_model = self.get_model(model_name=f'/home/tonglin.yan/identification_context/questeval/t5_qg_sqa_key_en')
+        self.qg_model = self.get_model(model_name=f'/home/tonglin.yan/identification_context/questeval/t5_qg_sqa_en')
         #self.cls_model = self.get_model(model_name=f'/home/tonglin.yan/identification_context/questeval/bert_classification')
-        self.ranking_model = self.get_model(model_name=f'/home/tonglin.yan/identification_context/questeval/bert_ranking')
+        self.ranking_model = self.get_model(model_name=f'/home/tonglin.yan/identification_context/questeval/bert_cls2')
 
 
     def _load_dataset(self):
@@ -230,7 +228,6 @@ class data2text:
         if self.dataset == 'totto':
             logs = []
             for tab, t, a in zip(table, text, self.answers):
-                print(t)
                 log = {'table': tab, 'text': t, 'phrases':[]}
                 sent = {'text': t[-1], 'qa_pairs':[{'answer':a}]}
                 log['phrases'].append(sent)
@@ -316,6 +313,7 @@ class data2text:
                         answers = []
 
                         answers_from_table = []
+                        """
                         for a_t in answer_tab:
                             words_tab = a_t.split(' ')
                             
@@ -334,7 +332,13 @@ class data2text:
                                     for ans_tab in answers_from_table:
                                         if w in ans_tab:
                                             answers.append(' '.join(ans_tab))                   
-
+                        """
+                        from fuzzywuzzy import fuzz
+                        for asw in answers_all:
+                            for a_t in answer_tab:
+                                if fuzz.token_sort_ratio(a_t, asw) > 70:
+                                    answers.append(a_t)
+                                
                         if '' in answers:
                             answers.remove('')
 
