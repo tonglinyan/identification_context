@@ -35,8 +35,8 @@ __version__ = "0.2.4"
 
 def parse_args():
     parser = argparse.ArgumentParser('Evaluation script for each model in questeval.')
-    parser.add_argument('--task', choices=['QA_D2T', 'QG_D2T', 'QA_T2T', 'QG_T2T', 'BERT_Classification', 'BERT_Ranking', 'BERT_Ranking_non_msmarco'], help='prediction of question answering, question generation or identification of context')
-    parser.add_argument('--author', choices=['hf', 'trained'], default='hf')
+    parser.add_argument('--task', choices=['QA_D2T', 'QG_D2T', 'QA_T2T', 'QG_T2T', 'BERT_Classification', 'BERT_Ranking', 'BERT_Classification_sent', 'BERT_Ranking_sent'], help='prediction of question answering, question generation or identification of context')
+    parser.add_argument('--author', choices=['hf', 'trained'], default='trained')
     parser.add_argument('--dataset', choices=['squad', 'sqa', 'wtq', 'webnlg'], help='datasets', default = 'squad')
     parser.add_argument('--verbose', '-v', action='store_true')
     parser.add_argument('--save_table', choices=[True, False], default=False)
@@ -85,7 +85,7 @@ class Evaluation:
             raise (
                 f'Dataset {self.dataset} is not available for model {self.task}. The list of available question-answering datasets are: {self.BERT_DATASETS}.'
             )
-
+        
         self._load_all_models()
 
         self._load_dataset()
@@ -100,7 +100,7 @@ class Evaluation:
         with open(f'{self.task}_{self.dataset}_{self.author}.json', 'r') as f:
             self.data = json.load(f)
         preds = None
-        """  
+        """ 
       
         print(self._evaluation(preds))
 
@@ -128,7 +128,7 @@ class Evaluation:
             if self.task == 'QG_T2T':
                 self.model = self.get_model(model_name='/home/tonglin.yan/identification_context/questeval/t5_qg_squad1_en')
             if 'BERT' in self.task:
-                self.model = self.get_model(model_name=f'/home/tonglin.yan/identification_context/questeval/bert_cls2')#{self.task.lower()}')
+                self.model = self.get_model(model_name=f'/home/tonglin.yan/identification_context/questeval/bert_classification_sent')#{self.task.lower()}')
 
     def _load_dataset(self):
         if 'T2T' in self.task:
@@ -147,6 +147,13 @@ class Evaluation:
         if 'BERT' in self.task:
             raw_datasets = load_dataset(
                 'data/squad_cls.py',
+                data_files={"validation":"dev-v1.1.json"},
+            )
+            test_set = raw_datasets['validation']
+            self.sentence1, self.sentence2, self.label = test_set['sentence1'], test_set['sentence2'], test_set['label']
+        if 'sent' in self.task:
+            raw_datasets = load_dataset(
+                'data/squad_rank_sent.py',
                 data_files={"validation":"dev-v1.1.json"},
             )
             test_set = raw_datasets['validation']
@@ -238,7 +245,7 @@ class Evaluation:
         preds: List
     ):
         data = []
-        if self.task == 'BERT_Classification':
+        if 'Classification' in self.task:
             qa_pair, log = None, None
             for s1, s2, l, p in zip(self.sentence1, self.sentence2, self.label, preds):
                 if s1 != qa_pair:
@@ -301,7 +308,7 @@ class Evaluation:
                 preds += pred
         
         if 'BERT' in self.task:
-            binary = (self.task =='BERT_Classification')
+            binary = ('Classification' in self.task)
             preds = []
             #self.label = self.label[:int(0.06*len(self.label))]
             for idx in tqdm(range(0, len(self.label), batch_size)):
@@ -387,7 +394,17 @@ class Evaluation:
         elif 'classification' in self.task.lower():
             #if self.binary:
             accuracy = sum([1 if l == p else 0 for l, p in zip(self.label, preds)])/len(self.label)
-            precision = sum([1 if log['context']==log['prediction'] else 0 for log in self.data])/len(self.data)
+            list_correct = []
+            for log in self.data:
+                crct = True
+                for c in log['context']:
+                    crct = (c in log['prediction']) and crct
+                if crct:
+                    list_correct.append(1)
+                else:
+                    list_correct.append(0)
+            precision = sum([1 if log['context'] in log['prediction'] else 0 for log in self.data])/len(self.data)
+            precision = sum(list_correct)/len(self.data)
             return collections.OrderedDict([
                 ('accuracy', 100.0 * accuracy),
                 ('precision', 100 * precision)])

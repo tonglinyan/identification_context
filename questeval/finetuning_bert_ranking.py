@@ -227,7 +227,6 @@ class BERT_Ranking(PreTrainedModel):
     def forward(self, input_ids, attention_mask):
         outputs = self.model(input_ids=input_ids, attention_mask=attention_mask)
         out = self.softmax(outputs.logits)
-
         return out
     
 
