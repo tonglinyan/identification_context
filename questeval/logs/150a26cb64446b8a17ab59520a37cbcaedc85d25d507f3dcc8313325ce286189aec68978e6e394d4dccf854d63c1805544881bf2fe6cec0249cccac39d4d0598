@@ -1,0 +1,464 @@
+{
+  "type": "hyp",
+  "text": "Linguistics is the scientific study of language.",
+  "self": {
+    "NER": {
+      "answers": [],
+      "QG_hash=/home/tonglin.yan/questeval/questeval/t5_qg_squad1_en": {
+        "questions": []
+      }
+    },
+    "NOUN": {
+      "answers": [
+        "Linguistics",
+        "the scientific study",
+        "language"
+      ],
+      "QG_hash=/home/tonglin.yan/questeval/questeval/t5_qg_squad1_en": {
+        "questions": [
+          "What is the scientific study of language?",
+          "What is the scientific study of language?",
+          "What is the scientific study of language?"
+        ]
+      }
+    }
+  },
+  "asked": {
+    "What are the areas of linguistic analysis?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.3579674959182739,
+        "ground_truth": {
+          "The traditional areas": {
+            "bertscore": 0.6602312922477722,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What are the traditional areas of linguistic analysis?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.1455533504486084,
+        "ground_truth": {
+          "linguistic analysis": {
+            "bertscore": 0.664174497127533,
+            "f1": 0
+          },
+          "phonetics": {
+            "bertscore": 0.6861390471458435,
+            "f1": 0
+          },
+          "phonology": {
+            "bertscore": 0.6725482940673828,
+            "f1": 0
+          },
+          "morphology": {
+            "bertscore": 0.6859646439552307,
+            "f1": 0
+          },
+          "syntax": {
+            "bertscore": 0.7110098600387573,
+            "f1": 0
+          },
+          "semantics": {
+            "bertscore": 0.6775600910186768,
+            "f1": 0
+          },
+          "pragmatics.[2": {
+            "bertscore": 0.636085033416748,
+            "f1": 0
+          },
+          "these areas": {
+            "bertscore": 0.6874200105667114,
+            "f1": 0
+          },
+          "phrases": {
+            "bertscore": 0.7111245393753052,
+            "f1": 0
+          },
+          "sentences": {
+            "bertscore": 0.721858561038971,
+            "f1": 0
+          },
+          "they": {
+            "bertscore": 0.707088053226471,
+            "f1": 0
+          },
+          "texts": {
+            "bertscore": 0.7058948278427124,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What is the main area of linguistic analysis?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.5968314409255981,
+        "ground_truth": {
+          "phenomena": {
+            "bertscore": 0.6895133256912231,
+            "f1": 0
+          },
+          "human linguistic systems": {
+            "bertscore": 0.6673974394798279,
+            "f1": 0
+          },
+          "the case": {
+            "bertscore": 0.6905454993247986,
+            "f1": 0
+          },
+          "words": {
+            "bertscore": 0.6842933893203735,
+            "f1": 0
+          },
+          "meaning": {
+            "bertscore": 0.6721097826957703,
+            "f1": 0
+          },
+          "These phenomena": {
+            "bertscore": 0.6507485508918762,
+            "f1": 0
+          },
+          "data": {
+            "bertscore": 0.7281461358070374,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What is the case of gesture?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.10071688890457153,
+        "ground_truth": {
+          "signed languages": {
+            "bertscore": 0.7156807780265808,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What are words, morphemes, phrases and sentences?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.2853078842163086,
+        "ground_truth": {
+          "minimal units": {
+            "bertscore": 0.7225875854492188,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What are the basic areas of linguistic analysis?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.4078320264816284,
+        "ground_truth": {
+          "morphemes": {
+            "bertscore": 0.6923028230667114,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What is the meaning of linguistics?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "scientific study of language",
+        "answerability": 0.6803757548332214,
+        "ground_truth": {
+          "use": {
+            "bertscore": 0.7144690752029419,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What is the term for the term \"linguistic analysis\"?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.24505716562271118,
+        "ground_truth": {
+          "Linguistics": {
+            "bertscore": 0.6426530480384827,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What is the main focus of linguistic analysis?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "scientific",
+        "answerability": 0.7708032131195068,
+        "ground_truth": {
+          "these phenomena": {
+            "bertscore": 0.7426872849464417,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What is the main focus of Linguistics?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "scientific study of language",
+        "answerability": 0.9406510591506958,
+        "ground_truth": {
+          "diverse ways": {
+            "bertscore": 0.7067258954048157,
+            "f1": 0
+          },
+          "various perspectives": {
+            "bertscore": 0.7034471035003662,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What is the term for the traditional areas of linguistic analysis?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.1618785858154297,
+        "ground_truth": {
+          "Theoretical linguistics": {
+            "bertscore": 0.6417180895805359,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What is the term for theoretical linguistics?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.032950401306152344,
+        "ground_truth": {
+          "traditional descriptive linguistics": {
+            "bertscore": 0.6655191779136658,
+            "f1": 0
+          },
+          "their combinatorics": {
+            "bertscore": 0.6481021046638489,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What is theoretical linguistics concerned with?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.0805889368057251,
+        "ground_truth": {
+          "building models": {
+            "bertscore": 0.7179127931594849,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What is the main focus of the linguistic analysis?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "scientific",
+        "answerability": 0.7774384021759033,
+        "ground_truth": {
+          "these systems": {
+            "bertscore": 0.7675681114196777,
+            "f1": 0
+          },
+          "Psycholinguistics": {
+            "bertscore": 0.74317467212677,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What is the main focus of the traditional areas of linguistic analysis?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.2566651701927185,
+        "ground_truth": {
+          "their parts": {
+            "bertscore": 0.651113748550415,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What are the parts of the linguistics?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.4406775236129761,
+        "ground_truth": {
+          "(ontologies": {
+            "bertscore": 0.6485639810562134,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What is the main focus of psycholinguistics?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.16897040605545044,
+        "ground_truth": {
+          "theories": {
+            "bertscore": 0.6836581230163574,
+            "f1": 0
+          },
+          "production": {
+            "bertscore": 0.5547123551368713,
+            "f1": 0
+          },
+          "all these phenomena": {
+            "bertscore": 0.6532058119773865,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What is the main theory of psycholinguistics?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.2536545395851135,
+        "ground_truth": {
+          "the processing": {
+            "bertscore": 0.6535771489143372,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What is the term for linguistic analysis?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.1422061324119568,
+        "ground_truth": {
+          "history": {
+            "bertscore": 0.6894418597221375,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What type of phenomena are studied in polyglots?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.09425610303878784,
+        "ground_truth": {
+          "monolinguals": {
+            "bertscore": 0.7123773097991943,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What type of phenomena are studied in monolinguals?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.02692502737045288,
+        "ground_truth": {
+          "polyglots": {
+            "bertscore": 0.6987889409065247,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What type of children are studied in monolinguals or polyglots?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.04340404272079468,
+        "ground_truth": {
+          "children": {
+            "bertscore": 0.6947104930877686,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What type of children are acquired or statically?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.10093367099761963,
+        "ground_truth": {
+          "adults": {
+            "bertscore": 0.7024071216583252,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What are the phenomena acquired or statically?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.1793861985206604,
+        "ground_truth": {
+          "abstract objects": {
+            "bertscore": 0.6897054314613342,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What are abstract objects or as embodied cognitive structures?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.26193392276763916,
+        "ground_truth": {
+          "cognitive structures": {
+            "bertscore": 0.6547062993049622,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What is the term for texts?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.3729684352874756,
+        "ground_truth": {
+          "corpora": {
+            "bertscore": 0.7335295677185059,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What is the process of gathering data mechanically, through fieldwork, or through introspective": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.20839309692382812,
+        "ground_truth": {
+          "experimental elicitation": {
+            "bertscore": 0.6854225397109985,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What is the process of gathering data mechanically?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.029037833213806152,
+        "ground_truth": {
+          "fieldwork": {
+            "bertscore": 0.703666627407074,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What is the process of gathering data mechanically or through fieldwork?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.10621649026870728,
+        "ground_truth": {
+          "introspective judgment tasks": {
+            "bertscore": 0.6691962480545044,
+            "f1": 0
+          }
+        }
+      }
+    }
+  }
+}

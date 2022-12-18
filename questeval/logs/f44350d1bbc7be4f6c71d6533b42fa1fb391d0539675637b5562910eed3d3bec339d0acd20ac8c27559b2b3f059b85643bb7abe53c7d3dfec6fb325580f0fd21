@@ -1,0 +1,126 @@
+{
+  "type": "ref",
+  "text": "Historical linguistics is the study of language change, particularly with regards to a specific language or a group of languages. Western trends in historical linguistics date back to roughly the late 18th century, when the discipline grew out of philology[3] (the study of ancient texts and antique documents). Historical linguistics emerged as one of the first few sub-disciplines in the field, and was most widely practiced during the late 19th century.[4] Despite a shift in focus in the twentieth century towards formalism and generative grammar, which studies the universal properties of language, historical research today still remains a significant field of linguistic inquiry. Subfields of the discipline include language change and grammaticalisation.",
+  "self": {
+    "NER": {
+      "answers": [
+        "the late 18th century",
+        "one",
+        "first",
+        "the late 19th",
+        "the twentieth century",
+        "today"
+      ],
+      "QG_hash=/home/tonglin.yan/questeval/questeval/t5_qg_squad1_en": {
+        "questions": [
+          "What century did Western trends in historical linguistics date back to?",
+          "What is the name of the discipline that is most widely practiced in the late 19th century",
+          "What is the name of the first sub-disciplines in the field?",
+          "What century was the most widely practiced discipline?",
+          "What century did the discipline focus on formalism and generative grammar?",
+          "What is the main focus of historical research?"
+        ]
+      }
+    },
+    "NOUN": {
+      "answers": [
+        "Historical linguistics",
+        "the study",
+        "language change",
+        "regards",
+        "a specific language",
+        "a group",
+        "languages",
+        "Western trends",
+        "historical linguistics date",
+        "roughly the late 18th century",
+        "the discipline",
+        "philology[3",
+        "(the study",
+        "ancient texts",
+        "antique documents",
+        "Historical linguistics",
+        "the first few sub",
+        "-",
+        "disciplines",
+        "the field",
+        "the late 19th century.[4",
+        "a shift",
+        "focus",
+        "the twentieth century",
+        "formalism",
+        "generative grammar",
+        "the universal properties",
+        "language",
+        "historical research",
+        "a significant field",
+        "linguistic inquiry",
+        "Subfields",
+        "the discipline",
+        "language change",
+        "grammaticalisation"
+      ],
+      "QG_hash=/home/tonglin.yan/questeval/questeval/t5_qg_squad1_en": {
+        "questions": [
+          "What is the study of language change?",
+          "What is the term for historical linguistics?",
+          "What is the study of historical linguistics?",
+          "What is the study of language change?",
+          "What is the study of language change?",
+          "What is the study of language change?",
+          "What is the main focus of historical linguistics?",
+          "What date back to the late 18th century?",
+          "What date did Western trends in historical linguistics date back to?",
+          "What century did Western trends in historical linguistics date back to?",
+          "What discipline grew out of philology?",
+          "What was the study of ancient texts and antique documents?",
+          "What is the term for historical linguistics?",
+          "What was the name of the discipline that grew out of philology?",
+          "What was the study of ancient texts and documents?",
+          "What is the study of language change?",
+          "What was the first sub-discipline of the discipline?",
+          "What is the name of the discipline that is most widely practiced in the late 19th century",
+          "What discipline was most widely practiced during the late 18th century?",
+          "What field did historical linguistics emerge as one of the first few sub-discip",
+          "What was the first sub-discipline of the discipline?",
+          "What was the focus of the twentieth century towards formalism and generative grammar?",
+          "What is the focus of the twentieth century on formalism and generative grammar?",
+          "What century did the discipline focus on formalism and generative grammar?",
+          "What is the focus of the twentieth century on generative grammar?",
+          "What is the universal properties of language?",
+          "What is generative grammar that studies the universal properties of language?",
+          "What is the term for the study of language change?",
+          "What is the main field of linguistic inquiry?",
+          "What is historical research still a significant field of linguistic inquiry?",
+          "What is the main field of historical research?",
+          "What discipline is language change and grammaticalisation?",
+          "What discipline grew out of philology?",
+          "What is the study of historical linguistics?",
+          "What subfields of the discipline include language change and grammaticalisation?"
+        ]
+      }
+    }
+  },
+  "asked": {
+    "What is the scientific study of language?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.2558743357658386,
+        "ground_truth": {
+          "Linguistics": {
+            "bertscore": 0.6427097320556641,
+            "f1": 0
+          },
+          "the scientific study": {
+            "bertscore": 0.6239704489707947,
+            "f1": 0
+          },
+          "language": {
+            "bertscore": 0.6804500818252563,
+            "f1": 0
+          }
+        }
+      }
+    }
+  }
+}

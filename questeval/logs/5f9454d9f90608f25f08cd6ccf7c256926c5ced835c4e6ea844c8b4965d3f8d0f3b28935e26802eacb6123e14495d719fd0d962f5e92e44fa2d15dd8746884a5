@@ -1,0 +1,36 @@
+{
+  "type": "hyp",
+  "text": "This is a hypothesis test",
+  "self": {
+    "NER": {
+      "answers": [],
+      "QG_hash=/home/tonglin.yan/questeval/questeval/t5_qg_squad1_en": {
+        "questions": []
+      }
+    },
+    "NOUN": {
+      "answers": [
+        "a hypothesis test"
+      ],
+      "QG_hash=/home/tonglin.yan/questeval/questeval/t5_qg_squad1_en": {
+        "questions": [
+          "What is a hypothesis test?"
+        ]
+      }
+    }
+  },
+  "asked": {
+    "What is a source test?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.41526395082473755,
+        "ground_truth": {
+          "a source test": {
+            "bertscore": 0.6834664344787598,
+            "f1": 0
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,124 @@
+{
+  "type": "ref",
+  "text": "After wildfires consumed the town, students who had planned for remote classes found some comfort in staying connected amid the chaos.",
+  "self": {
+    "NER": {
+      "answers": [],
+      "QG_hash=/home/tonglin.yan/questeval/questeval/t5_qg_squad1_en": {
+        "questions": []
+      }
+    },
+    "NOUN": {
+      "answers": [
+        "wildfires",
+        "the town",
+        "students",
+        "who",
+        "remote classes",
+        "some comfort",
+        "the chaos"
+      ],
+      "QG_hash=/home/tonglin.yan/questeval/questeval/t5_qg_squad1_en": {
+        "questions": [
+          "What caused the town to consume wildfires?",
+          "What was the name of the town that was consumed by wildfires?",
+          "What did students plan to attend?",
+          "What did students who planned for remote classes find comfort in staying connected?",
+          "What classes did students plan for?",
+          "What did students who planned for remote classes find in staying connected?",
+          "What caused students to stay connected?"
+        ]
+      }
+    }
+  },
+  "asked": {
+    "What caused the chaos in the town?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "wildfires",
+        "answerability": 0.9651792645454407,
+        "ground_truth": {
+          "wildfires": {
+            "bertscore": 1.0000001192092896,
+            "f1": 1.0
+          }
+        }
+      }
+    },
+    "What was the cause of the wildfires?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "chaos",
+        "answerability": 0.8410196900367737,
+        "ground_truth": {
+          "an entire town": {
+            "bertscore": 0.6751136183738708,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What did students and teachers plan for remote classes?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.37750011682510376,
+        "ground_truth": {
+          "students": {
+            "bertscore": 0.6892361640930176,
+            "f1": 0
+          },
+          "teachers": {
+            "bertscore": 0.6850643754005432,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What did students and teachers who had planned for remote classes find comfort in staying connected?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.28111183643341064,
+        "ground_truth": {
+          "who": {
+            "bertscore": 0.7074488997459412,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What classes did students and teachers plan for?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "remote",
+        "answerability": 0.9683148264884949,
+        "ground_truth": {
+          "remote classes": {
+            "bertscore": 0.8758388757705688,
+            "f1": 0.6666666666666666
+          }
+        }
+      }
+    },
+    "What comfort did students and teachers find when they planned for remote classes?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "staying connected amid the chaos",
+        "answerability": 0.9641955494880676,
+        "ground_truth": {
+          "some comfort": {
+            "bertscore": 0.6799418330192566,
+            "f1": 0
+          }
+        }
+      }
+    },
+    "What chaos did students and teachers have to stay connected to?": {
+      "QA_hash=/home/tonglin.yan/questeval/questeval/t5_qa_squad2neg_en": {
+        "answer": "unanswerable",
+        "answerability": 0.31887781620025635,
+        "ground_truth": {
+          "the chaos": {
+            "bertscore": 0.6721407175064087,
+            "f1": 0
+          }
+        }
+      }
+    }
+  }
+}
